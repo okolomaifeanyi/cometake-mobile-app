@@ -10,6 +10,8 @@ import '../../features/cart/presentation/screens/cart_screen.dart';
 import '../../features/orders/presentation/screens/checkout_screen.dart';
 import '../../features/orders/presentation/screens/order_detail_screen.dart';
 import '../../features/orders/presentation/screens/orders_screen.dart';
+import '../../features/chat/presentation/screens/conversation_screen.dart';
+import '../../features/chat/presentation/screens/conversations_screen.dart';
 import '../../features/vtu/domain/entities/vtu.dart';
 import '../../features/vtu/presentation/screens/vtu_history_screen.dart';
 import '../../features/vtu/presentation/screens/vtu_purchase_screen.dart';
@@ -153,14 +155,12 @@ final appRouterProvider = Provider<GoRouter>(
             ),
             GoRoute(
               path: AppRoutes.chat,
-              builder: (_, __) =>
-                  const _PlaceholderScreen(title: 'Messages', icon: Icons.chat_outlined),
+              builder: (_, __) => const ConversationsScreen(),
             ),
             GoRoute(
               path: AppRoutes.conversation,
-              builder: (_, state) => _PlaceholderScreen(
-                title: 'Conversation',
-                icon: Icons.chat_bubble_outline,
+              builder: (_, state) => ConversationScreen(
+                roomId: state.pathParameters['conversationId'] ?? '',
               ),
             ),
             GoRoute(
