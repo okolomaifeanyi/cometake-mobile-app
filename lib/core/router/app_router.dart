@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../supabase/supabase_module.dart';
+import '../../features/products/presentation/screens/product_detail_screen.dart';
+import '../../features/products/presentation/screens/products_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/otp_screen.dart';
@@ -68,14 +70,12 @@ final appRouterProvider = Provider<GoRouter>(
             ),
             GoRoute(
               path: AppRoutes.products,
-              builder: (_, __) =>
-                  const _PlaceholderScreen(title: 'Products', icon: Icons.grid_view_outlined),
+              builder: (_, __) => const ProductsScreen(),
               routes: [
                 GoRoute(
                   path: AppRoutes.productDetail,
-                  builder: (_, state) => _PlaceholderScreen(
-                    title: 'Product #${state.pathParameters['productId']}',
-                    icon: Icons.inventory_2_outlined,
+                  builder: (_, state) => ProductDetailScreen(
+                    productId: state.pathParameters['productId'] ?? '',
                   ),
                 ),
               ],

@@ -1,0 +1,19 @@
+# Normalize line endings to LF on checkin
+* text=auto eol=lf
+
+# Binary files — never transform
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.otf binary
+*.eot binary
+*.apk binary
+*.aab binary
+*.ipa binary
+*.keystore binary
+*.jks binary
