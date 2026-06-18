@@ -15,6 +15,7 @@ class Product with _$Product {
     required String sku,
     @Default([]) List<String> images,
     @Default(true) bool inStock,
+    @Default(false) bool isUnlisted,
     String? categoryId,
     @Default(true) bool isActive,
     double? weight,

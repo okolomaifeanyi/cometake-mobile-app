@@ -83,6 +83,7 @@ extension ProductModelX on ProductModel {
       sku: sku.isEmpty ? id : sku,
       images: images,
       inStock: inStock,
+      isUnlisted: unlist,
       categoryId: categoryId,
       isActive: !unlist,
       weight: weight,

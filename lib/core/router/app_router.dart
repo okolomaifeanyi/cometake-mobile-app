@@ -10,6 +10,8 @@ import '../../features/cart/presentation/screens/cart_screen.dart';
 import '../../features/orders/presentation/screens/checkout_screen.dart';
 import '../../features/orders/presentation/screens/order_detail_screen.dart';
 import '../../features/orders/presentation/screens/orders_screen.dart';
+import '../../features/vendor/presentation/screens/vendor_dashboard_screen.dart';
+import '../../features/vendor/presentation/screens/vendor_product_form_screen.dart';
 import '../../features/chat/presentation/screens/conversation_screen.dart';
 import '../../features/chat/presentation/screens/conversations_screen.dart';
 import '../../features/vtu/domain/entities/vtu.dart';
@@ -165,13 +167,21 @@ final appRouterProvider = Provider<GoRouter>(
             ),
             GoRoute(
               path: AppRoutes.vendor,
-              builder: (_, __) =>
-                  const _PlaceholderScreen(title: 'Vendor Dashboard', icon: Icons.store_outlined),
+              builder: (_, __) => const VendorDashboardScreen(),
             ),
             GoRoute(
               path: AppRoutes.vendorAddProduct,
-              builder: (_, __) =>
-                  const _PlaceholderScreen(title: 'Add Product', icon: Icons.add_box_outlined),
+              builder: (_, __) => const VendorProductFormScreen(),
+            ),
+            GoRoute(
+              path: AppRoutes.vendorEditProduct,
+              builder: (_, state) {
+                final productId = state.pathParameters['productId'] ?? '';
+                // Product entity can be passed via extra
+                final product = state.extra as dynamic;
+                return VendorProductFormScreen(
+                    product: product?.id == productId ? product : null);
+              },
             ),
           ],
         ),
