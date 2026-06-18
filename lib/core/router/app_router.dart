@@ -10,6 +10,10 @@ import '../../features/cart/presentation/screens/cart_screen.dart';
 import '../../features/orders/presentation/screens/checkout_screen.dart';
 import '../../features/orders/presentation/screens/order_detail_screen.dart';
 import '../../features/orders/presentation/screens/orders_screen.dart';
+import '../../features/vtu/domain/entities/vtu.dart';
+import '../../features/vtu/presentation/screens/vtu_history_screen.dart';
+import '../../features/vtu/presentation/screens/vtu_purchase_screen.dart';
+import '../../features/vtu/presentation/screens/vtu_screen.dart';
 import '../../features/wallet/presentation/screens/topup_screen.dart';
 import '../../features/wallet/presentation/screens/wallet_screen.dart';
 
@@ -128,8 +132,24 @@ final appRouterProvider = Provider<GoRouter>(
             ),
             GoRoute(
               path: AppRoutes.vtu,
-              builder: (_, __) =>
-                  const _PlaceholderScreen(title: 'VTU Services', icon: Icons.phone_android_outlined),
+              builder: (_, __) => const VtuScreen(),
+              routes: [
+                GoRoute(
+                  path: ':serviceType',
+                  builder: (_, state) {
+                    final typeStr = state.pathParameters['serviceType'] ?? '';
+                    final type = VtuServiceType.values.firstWhere(
+                      (t) => t.name == typeStr,
+                      orElse: () => VtuServiceType.airtime,
+                    );
+                    return VtuPurchaseScreen(serviceType: type);
+                  },
+                ),
+              ],
+            ),
+            GoRoute(
+              path: AppRoutes.vtuHistory,
+              builder: (_, __) => const VtuHistoryScreen(),
             ),
             GoRoute(
               path: AppRoutes.chat,

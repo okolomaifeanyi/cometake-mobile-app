@@ -27,6 +27,9 @@ abstract final class AppRoutes {
   static String orderDetailPath(String id) => '/order/$id';
 
   static const vtu = '/vtu';
+  static const vtuPurchase = '/vtu/:serviceType';
+  static String vtuPurchasePath(String type) => '/vtu/$type';
+  static const vtuHistory = '/vtu-history';
 
   static const chat = '/chat';
   static const conversation = '/chat/:conversationId';
