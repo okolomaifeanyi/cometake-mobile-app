@@ -10,6 +10,8 @@ import '../../features/cart/presentation/screens/cart_screen.dart';
 import '../../features/orders/presentation/screens/checkout_screen.dart';
 import '../../features/orders/presentation/screens/order_detail_screen.dart';
 import '../../features/orders/presentation/screens/orders_screen.dart';
+import '../../features/wallet/presentation/screens/topup_screen.dart';
+import '../../features/wallet/presentation/screens/wallet_screen.dart';
 
 import '../supabase/supabase_module.dart';
 import '../../features/products/presentation/screens/product_detail_screen.dart';
@@ -92,8 +94,13 @@ final appRouterProvider = Provider<GoRouter>(
             ),
             GoRoute(
               path: AppRoutes.wallet,
-              builder: (_, __) =>
-                  const _PlaceholderScreen(title: 'Wallet', icon: Icons.account_balance_wallet_outlined),
+              builder: (_, __) => const WalletScreen(),
+              routes: [
+                GoRoute(
+                  path: 'topup',
+                  builder: (_, __) => const TopupScreen(),
+                ),
+              ],
             ),
             GoRoute(
               path: AppRoutes.profile,

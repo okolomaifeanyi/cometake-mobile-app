@@ -32,6 +32,9 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   connectivity_plus: ^6.1.4
 
+  # Browser / Payments
+  url_launcher: ^6.3.1
+
   # Utilities
   logger: ^2.5.0
   package_info_plus: ^8.1.3

@@ -18,6 +18,9 @@ abstract final class AppRoutes {
   static const productDetail = ':productId';
   static String productDetailPath(String id) => '/products/$id';
 
+  // Nested under /wallet
+  static const walletTopup = '/wallet/topup';
+
   // Top-level authenticated (still inside shell)
   static const orders = '/orders';
   static const orderDetail = '/order/:orderId';
