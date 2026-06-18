@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../cart/presentation/providers/cart_provider.dart';
+
 import '../../../../core/services/cloudinary_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -356,9 +358,39 @@ class _ImageCarousel extends StatelessWidget {
 
 // ─── Add to cart bar ──────────────────────────────────────────────────────────
 
-class _AddToCartBar extends StatelessWidget {
+class _AddToCartBar extends ConsumerStatefulWidget {
   final Product product;
   const _AddToCartBar({required this.product});
+
+  @override
+  ConsumerState<_AddToCartBar> createState() => _AddToCartBarState();
+}
+
+class _AddToCartBarState extends ConsumerState<_AddToCartBar> {
+  bool _adding = false;
+
+  Future<void> _addToCart() async {
+    setState(() => _adding = true);
+    await ref
+        .read(cartNotifierProvider.notifier)
+        .addItem(widget.product.id);
+    if (mounted) {
+      setState(() => _adding = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${widget.product.name} added to cart'),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+          action: SnackBarAction(
+            label: 'View Cart',
+            onPressed: () => context.mounted
+                ? Navigator.of(context).popUntil((r) => r.isFirst)
+                : null,
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -367,8 +399,7 @@ class _AddToCartBar extends StatelessWidget {
         AppDimensions.screenPaddingH,
         AppDimensions.spacingMd,
         AppDimensions.screenPaddingH,
-        AppDimensions.spacingMd +
-            MediaQuery.paddingOf(context).bottom,
+        AppDimensions.spacingMd + MediaQuery.paddingOf(context).bottom,
       ),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -381,21 +412,12 @@ class _AddToCartBar extends StatelessWidget {
         ],
       ),
       child: AppButton(
-        label: product.inStock ? 'Add to Cart' : 'Out of Stock',
-        onPressed: product.inStock ? () => _showComingSoon(context) : null,
-        icon: product.inStock
+        label: widget.product.inStock ? 'Add to Cart' : 'Out of Stock',
+        onPressed: widget.product.inStock && !_adding ? _addToCart : null,
+        isLoading: _adding,
+        icon: widget.product.inStock && !_adding
             ? const Icon(Icons.shopping_cart_outlined)
             : null,
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Cart coming in Phase 5!'),
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
       ),
     );
   }

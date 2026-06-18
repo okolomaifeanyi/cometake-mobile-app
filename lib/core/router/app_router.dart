@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../features/cart/presentation/providers/cart_provider.dart';
+import '../../features/cart/presentation/screens/cart_screen.dart';
+
 import '../supabase/supabase_module.dart';
 import '../../features/products/presentation/screens/product_detail_screen.dart';
 import '../../features/products/presentation/screens/products_screen.dart';
@@ -82,8 +85,7 @@ final appRouterProvider = Provider<GoRouter>(
             ),
             GoRoute(
               path: AppRoutes.cart,
-              builder: (_, __) =>
-                  const _PlaceholderScreen(title: 'Cart', icon: Icons.shopping_cart_outlined),
+              builder: (_, __) => const CartScreen(),
             ),
             GoRoute(
               path: AppRoutes.wallet,
@@ -168,64 +170,71 @@ class _AuthRefreshNotifier extends ChangeNotifier {
   }
 }
 
-class _MainShell extends StatelessWidget {
+class _MainShell extends ConsumerWidget {
   final String location;
   final Widget child;
 
   const _MainShell({required this.location, required this.child});
 
-  // Maps NavigationBar index → route path
   static const _tabs = [
-    AppRoutes.home,     // 0
-    AppRoutes.products, // 1
-    AppRoutes.cart,     // 2
-    AppRoutes.wallet,   // 3
-    AppRoutes.profile,  // 4
+    AppRoutes.home,
+    AppRoutes.products,
+    AppRoutes.cart,
+    AppRoutes.wallet,
+    AppRoutes.profile,
   ];
 
   int get _selectedIndex {
     if (location.startsWith(AppRoutes.products)) return 1;
     if (location.startsWith(AppRoutes.cart)) return 2;
     if (location.startsWith(AppRoutes.wallet)) return 3;
-    // Treat profile-adjacent routes as Profile tab
     if (location.startsWith(AppRoutes.profile) ||
         location.startsWith(AppRoutes.orders) ||
         location.startsWith('/order/') ||
         location.startsWith(AppRoutes.vtu) ||
         location.startsWith(AppRoutes.chat) ||
         location.startsWith(AppRoutes.vendor)) return 4;
-    return 0; // Home
+    return 0;
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cartCount = ref.watch(cartItemCountProvider);
     return Scaffold(
       body: child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (i) => context.go(_tabs[i]),
-        destinations: const [
-          NavigationDestination(
+        destinations: [
+          const NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'Home',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.grid_view_outlined),
             selectedIcon: Icon(Icons.grid_view),
             label: 'Products',
           ),
           NavigationDestination(
-            icon: Icon(Icons.shopping_cart_outlined),
-            selectedIcon: Icon(Icons.shopping_cart),
+            icon: Badge(
+              isLabelVisible: cartCount > 0,
+              label: Text('$cartCount'),
+              child: const Icon(Icons.shopping_cart_outlined),
+            ),
+            selectedIcon: Badge(
+              isLabelVisible: cartCount > 0,
+              label: Text('$cartCount'),
+              child: const Icon(Icons.shopping_cart),
+            ),
             label: 'Cart',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.account_balance_wallet_outlined),
             selectedIcon: Icon(Icons.account_balance_wallet),
             label: 'Wallet',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
             label: 'Profile',
