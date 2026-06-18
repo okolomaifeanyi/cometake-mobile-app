@@ -4,11 +4,15 @@ enum PaymentStatus {
   failed,
   refunded;
 
-  static PaymentStatus fromString(String value) =>
-      PaymentStatus.values.firstWhere(
-        (s) => s.name.toLowerCase() == value.toLowerCase(),
-        orElse: () => PaymentStatus.pending,
-      );
+  static PaymentStatus fromString(String value) {
+    // Handle web API variants: COMPLETED → success, PAID → success
+    final lower = value.toLowerCase();
+    if (lower == 'completed' || lower == 'paid') return PaymentStatus.success;
+    return PaymentStatus.values.firstWhere(
+      (s) => s.name.toLowerCase() == lower,
+      orElse: () => PaymentStatus.pending,
+    );
+  }
 
   String get displayName => switch (this) {
         PaymentStatus.pending => 'Pending',

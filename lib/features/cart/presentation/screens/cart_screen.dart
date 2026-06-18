@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -143,19 +144,10 @@ class _CartSummary extends StatelessWidget {
           const SizedBox(height: AppDimensions.spacingMd),
           AppButton(
             label: 'Proceed to Checkout',
-            onPressed: () => _showComingSoon(context),
+            onPressed: () => context.push('/checkout'),
             icon: const Icon(Icons.arrow_forward),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Checkout coming in Phase 6 (Orders)!'),
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }

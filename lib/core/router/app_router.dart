@@ -7,6 +7,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/cart/presentation/providers/cart_provider.dart';
 import '../../features/cart/presentation/screens/cart_screen.dart';
+import '../../features/orders/presentation/screens/checkout_screen.dart';
+import '../../features/orders/presentation/screens/order_detail_screen.dart';
+import '../../features/orders/presentation/screens/orders_screen.dart';
 
 import '../supabase/supabase_module.dart';
 import '../../features/products/presentation/screens/product_detail_screen.dart';
@@ -104,15 +107,17 @@ final appRouterProvider = Provider<GoRouter>(
             ),
             GoRoute(
               path: AppRoutes.orders,
-              builder: (_, __) =>
-                  const _PlaceholderScreen(title: 'Orders', icon: Icons.receipt_long_outlined),
+              builder: (_, __) => const OrdersScreen(),
             ),
             GoRoute(
               path: AppRoutes.orderDetail,
-              builder: (_, state) => _PlaceholderScreen(
-                title: 'Order #${state.pathParameters['orderId']}',
-                icon: Icons.receipt_outlined,
+              builder: (_, state) => OrderDetailScreen(
+                orderId: state.pathParameters['orderId'] ?? '',
               ),
+            ),
+            GoRoute(
+              path: '/checkout',
+              builder: (_, __) => const CheckoutScreen(),
             ),
             GoRoute(
               path: AppRoutes.vtu,
