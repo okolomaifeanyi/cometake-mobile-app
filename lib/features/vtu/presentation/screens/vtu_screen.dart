@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_error_widget.dart';
 import '../../domain/entities/vtu.dart';
@@ -15,185 +14,437 @@ class VtuScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final historyAsync = ref.watch(vtuHistoryProvider);
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('VTU Services'),
-        actions: [
-          TextButton.icon(
-            onPressed: () => context.push(AppRoutes.vtuHistory),
-            icon: const Icon(Icons.history),
-            label: const Text('History'),
+      backgroundColor: context.bg,
+      body: RefreshIndicator(
+        color: AppColors.figmaGreen,
+        onRefresh: () async => ref.read(vtuHistoryProvider.notifier).refresh(),
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: _VtuAppBar()),
+            SliverToBoxAdapter(child: _VtuHero()),
+            SliverToBoxAdapter(child: _TopUpServices()),
+            SliverToBoxAdapter(child: _VtuHistorySection(ref: ref)),
+            SliverToBoxAdapter(child: _TrustBanner()),
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── App Bar ─────────────────────────────────────────────────────────────────
+
+class _VtuAppBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: context.bg,
+      padding: EdgeInsets.fromLTRB(16, MediaQuery.viewPaddingOf(context).top + 8, 16, 12),
+      child: Row(
+        children: [
+          Text(
+            'VTU Services',
+            style: TextStyle(
+              color: context.t1,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => context.go(AppRoutes.vtuHistory),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: context.card,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: context.border),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.history_rounded,
+                      color: AppColors.figmaGreen, size: 16),
+                  SizedBox(width: 4),
+                  Text(
+                    'History',
+                    style: TextStyle(
+                      color: AppColors.figmaGreen,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDimensions.screenPaddingH),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ─── Service tiles ─────────────────────────────────────
-            Text(
-              'Quick Services',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: AppDimensions.spacingMd),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: AppDimensions.spacingMd,
-              mainAxisSpacing: AppDimensions.spacingMd,
-              childAspectRatio: 1.4,
-              children: VtuServiceType.values
-                  .map((t) => _ServiceTile(type: t))
-                  .toList(),
-            ),
-
-            const SizedBox(height: AppDimensions.spacingXl),
-
-            // ─── Recent history ────────────────────────────────────
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Recent Transactions',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                TextButton(
-                  onPressed: () => context.push(AppRoutes.vtuHistory),
-                  child: const Text('See all'),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppDimensions.spacingSm),
-            historyAsync.when(
-              loading: () => const Center(
-                  child: Padding(
-                padding: EdgeInsets.all(AppDimensions.spacingLg),
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )),
-              error: (e, _) => AppErrorWidget(
-                message: e.toString(),
-                onRetry: () =>
-                    ref.read(vtuHistoryProvider.notifier).refresh(),
-              ),
-              data: (txs) {
-                final recent = txs.take(5).toList();
-                if (recent.isEmpty) {
-                  return const _EmptyHistory();
-                }
-                return Column(
-                  children: recent
-                      .map((t) => _VtuTxTile(transaction: t))
-                      .toList(),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
 
-// ─── Service tile ─────────────────────────────────────────────────────────────
+// ─── Hero Banner ─────────────────────────────────────────────────────────────
 
-class _ServiceTile extends StatelessWidget {
-  final VtuServiceType type;
-
-  static const _colors = {
-    VtuServiceType.airtime: Color(0xFF4CAF50),
-    VtuServiceType.data: Color(0xFF2196F3),
-    VtuServiceType.electricity: Color(0xFFFF9800),
-    VtuServiceType.cable: Color(0xFF9C27B0),
-  };
-
-  static const _icons = {
-    VtuServiceType.airtime: Icons.phone_android_outlined,
-    VtuServiceType.data: Icons.wifi_outlined,
-    VtuServiceType.electricity: Icons.bolt_outlined,
-    VtuServiceType.cable: Icons.tv_outlined,
-  };
-
-  const _ServiceTile({required this.type});
-
+class _VtuHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final color = _colors[type] ?? AppColors.primary;
-    final icon = _icons[type] ?? Icons.miscellaneous_services;
-
-    return InkWell(
-      onTap: () => context.push(AppRoutes.vtuPurchasePath(type.name)),
-      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-      child: Container(
-        padding: const EdgeInsets.all(AppDimensions.spacingMd),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-          border: Border.all(color: color.withOpacity(0.2)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: AppDimensions.spacingSm),
-            Text(
-              type.displayName,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Transaction tile ─────────────────────────────────────────────────────────
-
-class _VtuTxTile extends StatelessWidget {
-  final VtuTransaction transaction;
-  const _VtuTxTile({required this.transaction});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final statusColor = switch (transaction.status) {
-      VtuStatus.completed => AppColors.success,
-      VtuStatus.failed => AppColors.error,
-      VtuStatus.pending => AppColors.warning,
-    };
-
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.spacingSm),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.figmaTeal, AppColors.figmaTealEnd],
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.figmaGreen.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'INSTANT TOP-UP',
+                      style: TextStyle(
+                        color: AppColors.figmaGreen,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Top Up &\nStay Connected',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Airtime, data, bills — all in one place.',
+                    style: TextStyle(color: Color(0xFFD1D5DB), fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const Text('📱', style: TextStyle(fontSize: 52)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Top-Up Services (2-col) ─────────────────────────────────────────────────
+
+class _TopUpServices extends StatelessWidget {
+  static const _services = [
+    _VtuService(
+      type: VtuServiceType.airtime,
+      label: 'Airtime',
+      subtitle: 'Instant recharge',
+      icon: Icons.phone_android,
+      color: Color(0xFF22C55E),
+    ),
+    _VtuService(
+      type: VtuServiceType.data,
+      label: 'Data Bundle',
+      subtitle: 'High-speed internet',
+      icon: Icons.wifi_rounded,
+      color: Color(0xFF3B82F6),
+    ),
+    _VtuService(
+      type: VtuServiceType.cable,
+      label: 'Cable TV',
+      subtitle: 'DSTV, GoTV & more',
+      icon: Icons.tv_rounded,
+      color: Color(0xFF8B5CF6),
+    ),
+    _VtuService(
+      type: VtuServiceType.electricity,
+      label: 'Electricity',
+      subtitle: 'Prepaid & postpaid',
+      icon: Icons.bolt_rounded,
+      color: Color(0xFFEAB308),
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Text(
+            'Quick Top-Up',
+            style: TextStyle(
+              color: context.t1,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: _services
+                .map((s) => _TopUpCard(service: s))
+                .expand((w) => [w, const SizedBox(height: 10)])
+                .toList()
+              ..removeLast(),
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+class _VtuService {
+  final VtuServiceType type;
+  final String label;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  const _VtuService({
+    required this.type,
+    required this.label,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+  });
+}
+
+class _TopUpCard extends StatelessWidget {
+  final _VtuService service;
+  const _TopUpCard({required this.service});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.go(AppRoutes.vtuPurchasePath(service.type.name)),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: context.card,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: context.border),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: service.color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(service.icon, color: service.color, size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    service.label,
+                    style: TextStyle(
+                      color: context.t1,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    service.subtitle,
+                    style: TextStyle(color: context.t2, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: context.t4, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── VTU History Section ──────────────────────────────────────────────────────
+
+class _VtuHistorySection extends ConsumerWidget {
+  final WidgetRef ref;
+  const _VtuHistorySection({required this.ref});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final historyAsync = ref.watch(vtuHistoryProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Row(
+            children: [
+              Text(
+                'Recent Transactions',
+                style: TextStyle(
+                  color: context.t1,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => context.go(AppRoutes.vtuHistory),
+                child: const Row(
+                  children: [
+                    Text(
+                      'See All',
+                      style: TextStyle(
+                        color: AppColors.figmaGreen,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Icon(Icons.chevron_right,
+                        color: AppColors.figmaGreen, size: 16),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        historyAsync.when(
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: CircularProgressIndicator(
+                color: AppColors.figmaGreen,
+                strokeWidth: 2,
+              ),
+            ),
+          ),
+          error: (e, _) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: AppErrorWidget(
+              message: e.toString(),
+              onRetry: () => ref.read(vtuHistoryProvider.notifier).refresh(),
+            ),
+          ),
+          data: (txs) {
+            if (txs.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.receipt_outlined, color: context.t4, size: 40),
+                      const SizedBox(height: 8),
+                      Text(
+                        'No transactions yet',
+                        style: TextStyle(color: context.t2, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            return Column(
+              children: txs.take(5).map((t) => _VtuTxCard(tx: t)).toList(),
+            );
+          },
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+class _VtuTxCard extends StatelessWidget {
+  final VtuTransaction tx;
+  const _VtuTxCard({required this.tx});
+
+  static const _statusColors = {
+    VtuStatus.completed: AppColors.figmaGreen,
+    VtuStatus.failed: Color(0xFFEF4444),
+    VtuStatus.pending: Color(0xFFF59E0B),
+  };
+
+  static const _serviceIcons = {
+    'airtime': Icons.phone_android,
+    'data': Icons.wifi_rounded,
+    'cable': Icons.tv_rounded,
+    'electricity': Icons.bolt_rounded,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = _statusColors[tx.status] ?? AppColors.figmaGreen;
+    final serviceKey = tx.serviceType.toLowerCase();
+    final icon = _serviceIcons.entries
+        .firstWhere(
+          (e) => serviceKey.contains(e.key),
+          orElse: () => const MapEntry('', Icons.receipt_outlined),
+        )
+        .value;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: context.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.border),
+      ),
       child: Row(
         children: [
-          Icon(Icons.receipt_outlined,
-              color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: AppDimensions.spacingMd),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: statusColor, size: 18),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${transaction.serviceType} — ${transaction.provider}',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  '${tx.serviceType} — ${tx.provider}',
+                  style: TextStyle(
+                    color: context.t1,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 2),
                 Text(
-                  Formatters.dateTime(transaction.createdAt),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant),
+                  Formatters.dateTime(tx.createdAt),
+                  style: TextStyle(color: context.t2, fontSize: 11),
                 ),
               ],
             ),
@@ -202,23 +453,27 @@ class _VtuTxTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                Formatters.currency(transaction.amount),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(fontWeight: FontWeight.w700),
+                Formatters.currency(tx.amount),
+                style: TextStyle(
+                  color: context.t1,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
+              const SizedBox(height: 3),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius:
-                      BorderRadius.circular(AppDimensions.radiusFull),
+                  color: statusColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  transaction.status.displayName,
+                  tx.status.displayName,
                   style: TextStyle(
-                      color: statusColor,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600),
+                    color: statusColor,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -229,19 +484,55 @@ class _VtuTxTile extends StatelessWidget {
   }
 }
 
-class _EmptyHistory extends StatelessWidget {
-  const _EmptyHistory();
+// ─── Trust Banner ─────────────────────────────────────────────────────────────
 
+class _TrustBanner extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppDimensions.spacingXl),
-          child: Text(
-            'No transactions yet',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-          ),
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: context.card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.figmaGreen.withOpacity(0.25)),
         ),
-      );
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.figmaGreen.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.shield_rounded,
+                  color: AppColors.figmaGreen, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Secure. Fast. Reliable.',
+                    style: TextStyle(
+                      color: context.t1,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    'All transactions are encrypted and\nprocessed instantly.',
+                    style: TextStyle(color: context.t2, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

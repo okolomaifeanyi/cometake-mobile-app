@@ -35,6 +35,11 @@ abstract final class AppRoutes {
   static const conversation = '/chat/:conversationId';
   static String conversationPath(String id) => '/chat/$id';
 
+  static const notifications = '/notifications';
+
+  static const addresses = '/addresses';
+  static const wishlist = '/wishlist';
+
   static const vendor = '/vendor';
   static const vendorAddProduct = '/vendor/add-product';
   static const vendorEditProduct = '/vendor/edit-product/:productId';

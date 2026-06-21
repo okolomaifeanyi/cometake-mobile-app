@@ -7,7 +7,7 @@ import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../domain/entities/product.dart';
 
-class ProductCard extends StatelessWidget {
+class ProductCard extends StatefulWidget {
   final Product product;
   final VoidCallback onTap;
 
@@ -18,12 +18,28 @@ class ProductCard extends StatelessWidget {
   });
 
   @override
+  State<ProductCard> createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<ProductCard> {
+  bool _navigating = false;
+
+  void _handleTap() {
+    if (_navigating) return;
+    _navigating = true;
+    widget.onTap();
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted) _navigating = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: _handleTap,
       child: Card(
         elevation: AppDimensions.cardElevation,
         clipBehavior: Clip.antiAlias,
@@ -39,12 +55,12 @@ class ProductCard extends StatelessWidget {
                 SizedBox(
                   height: AppDimensions.productCardImageHeight,
                   width: double.infinity,
-                  child: product.thumbnailUrl != null
+                  child: widget.product.thumbnailUrl != null
                       ? Hero(
-                          tag: 'product-${product.id}',
+                          tag: 'product-${widget.product.id}',
                           child: CachedNetworkImage(
                             imageUrl: CloudinaryService.optimized(
-                              product.thumbnailUrl!,
+                              widget.product.thumbnailUrl!,
                               width: AppDimensions.productCardWidth.toInt() * 2,
                             ),
                             fit: BoxFit.cover,
@@ -55,14 +71,14 @@ class ProductCard extends StatelessWidget {
                       : _ImagePlaceholder(),
                 ),
                 // Discount badge
-                if (product.hasDiscount)
+                if (widget.product.hasDiscount)
                   Positioned(
                     top: AppDimensions.spacingXs,
                     left: AppDimensions.spacingXs,
-                    child: _DiscountBadge(percent: product.discountPercent),
+                    child: _DiscountBadge(percent: widget.product.discountPercent),
                   ),
                 // Out of stock overlay
-                if (!product.inStock)
+                if (!widget.product.inStock)
                   Positioned.fill(
                     child: Container(
                       color: Colors.black45,
@@ -96,7 +112,7 @@ class ProductCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    product.name,
+                    widget.product.name,
                     style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       height: 1.3,
@@ -111,16 +127,16 @@ class ProductCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          Formatters.currency(product.price),
+                          Formatters.currency(widget.product.price),
                           style: theme.textTheme.titleSmall?.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
-                      if (product.hasDiscount)
+                      if (widget.product.hasDiscount)
                         Text(
-                          Formatters.currency(product.comparePrice!),
+                          Formatters.currency(widget.product.comparePrice!),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                             decoration: TextDecoration.lineThrough,
@@ -130,10 +146,10 @@ class ProductCard extends StatelessWidget {
                     ],
                   ),
                   // Category label
-                  if (product.category != null) ...[
+                  if (widget.product.category != null) ...[
                     const SizedBox(height: AppDimensions.spacingXs),
                     Text(
-                      product.category!.name,
+                      widget.product.category!.name,
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),

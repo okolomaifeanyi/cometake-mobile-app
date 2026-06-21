@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../cart/presentation/providers/cart_provider.dart';
+import '../../../wishlist/presentation/providers/wishlist_provider.dart';
 
 import '../../../../core/services/cloudinary_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -69,13 +70,14 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
           onTap: () => Navigator.pop(context),
           child: Container(
             margin: const EdgeInsets.all(AppDimensions.spacingSm),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Colors.black38,
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.arrow_back, color: Colors.white),
           ),
         ),
+        actions: [_WishlistButton(productId: product.id)],
       ),
       body: Column(
         children: [
@@ -100,7 +102,6 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
                       children: [
                         // ─── Price ───────────────────────────────
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(
                               child: Text(
@@ -121,7 +122,7 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
                               ),
                               const SizedBox(width: AppDimensions.spacingSm),
                               _DiscountBadge(
-                                  percent: product.discountPercent),
+                                  percent: product.discountPercent,),
                             ],
                           ],
                         ),
@@ -196,10 +197,10 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
                             const SizedBox(height: AppDimensions.spacingXs),
                             GestureDetector(
                               onTap: () => setState(
-                                  () => _descExpanded = !_descExpanded),
+                                  () => _descExpanded = !_descExpanded,),
                               child: Text(
                                 _descExpanded ? 'Show less' : 'Read more',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
@@ -232,7 +233,7 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
                                       visualDensity:
                                           VisualDensity.compact,
                                       padding: EdgeInsets.zero,
-                                    ))
+                                    ),)
                                 .toList(),
                           ),
                           const SizedBox(height: AppDimensions.spacingMd),
@@ -483,7 +484,7 @@ class _InfoChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,),
             const SizedBox(width: 4),
             Text(
               label,
@@ -517,6 +518,35 @@ class _DiscountBadge extends StatelessWidget {
           ),
         ),
       );
+}
+
+// ─── Wishlist heart button ────────────────────────────────────────────────────
+
+class _WishlistButton extends ConsumerWidget {
+  final String productId;
+  const _WishlistButton({required this.productId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ids = ref.watch(wishlistIdsProvider).valueOrNull ?? [];
+    final isSaved = ids.contains(productId);
+    return Container(
+      margin: const EdgeInsets.all(AppDimensions.spacingSm),
+      decoration: const BoxDecoration(
+        color: Colors.black38,
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        icon: Icon(
+          isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+          color: isSaved ? Colors.red : Colors.white,
+          size: 22,
+        ),
+        onPressed: () =>
+            ref.read(wishlistIdsProvider.notifier).toggle(productId),
+      ),
+    );
+  }
 }
 
 class _DetailRow extends StatelessWidget {
