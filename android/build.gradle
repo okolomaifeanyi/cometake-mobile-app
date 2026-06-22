@@ -1,3 +1,25 @@
+// Stub flutter SDK properties for library plugin sub-projects (e.g. app_links 6.x)
+// that reference flutter.compileSdkVersion inside their android{} blocks.
+// The real flutter extension is registered by dev.flutter.flutter-gradle-plugin in :app;
+// this stub satisfies the property lookup for every OTHER sub-project before their
+// build.gradle is evaluated.
+class FlutterSdkVersions {
+    int compileSdkVersion = 34
+    int targetSdkVersion  = 34
+    int minSdkVersion     = 21
+    int versionCode       = 1
+    String versionName    = '1.0'
+    String ndkVersion     = '27.0.12077973'
+}
+
+gradle.beforeProject { proj ->
+    if (proj.path != ':' && proj.path != ':app') {
+        if (proj.extensions.findByName('flutter') == null) {
+            proj.extensions.create('flutter', FlutterSdkVersions)
+        }
+    }
+}
+
 allprojects {
     repositories {
         google()
