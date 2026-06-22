@@ -5,14 +5,17 @@ import '../../domain/entities/product.dart';
 import '../models/product_model.dart';
 import 'products_datasource.dart';
 
-// PostgREST select string: joins category, seller profile, and cover image
+// core_user has no public SELECT RLS policy — omit seller join for all queries
+// to avoid PostgREST failing the entire query for unauthenticated users.
+// seller_id is still returned so the vendor can be resolved separately if needed.
 const _kProductSelect = '''
   id, name, price, description, weight, in_stock, unlist, created_at,
   sku, compare_price, tags, is_featured, category_id, seller_id,
   category:core_category!category_id(id, name),
-  seller:core_user!seller_id(id, first_name, last_name),
   cover:core_media!product_cover_image_id(media)
 ''';
+
+const _kProductDetailSelect = _kProductSelect;
 
 const _kSortMap = {
   'newest': ('created_at', false),    // col, ascending
@@ -41,8 +44,8 @@ class SupabaseProductsDatasource implements ProductsDatasource {
 
       var query = _client.from('core_products').select(_kProductSelect);
 
-      // Active products only
-      query = query.eq('unlist', false);
+      // Active and approved products only
+      query = query.eq('unlist', false).eq('approval_status', 'approved');
 
       if (search != null && search.isNotEmpty) {
         query = query.ilike('name', '%$search%');
@@ -78,7 +81,7 @@ class SupabaseProductsDatasource implements ProductsDatasource {
     try {
       final response = await _client
           .from('core_products')
-          .select(_kProductSelect)
+          .select(_kProductDetailSelect)
           .eq('id', id)
           .single();
 

@@ -3,7 +3,10 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/services/cloudinary_service.dart';
+import '../../../home/presentation/providers/home_products_provider.dart';
+import '../../../products/data/models/product_model.dart';
 import '../../../products/domain/entities/product.dart';
+import '../../../products/presentation/providers/products_provider.dart';
 import '../../data/datasources/vendor_datasource.dart';
 
 // ─── Vendor products list ─────────────────────────────────────────────────────
@@ -29,7 +32,7 @@ class VendorProductsNotifier extends AsyncNotifier<List<Product>> {
 
 final vendorProductsProvider =
     AsyncNotifierProvider<VendorProductsNotifier, List<Product>>(
-        () => VendorProductsNotifier());
+        () => VendorProductsNotifier(),);
 
 // ─── Product create/update/delete notifier ────────────────────────────────────
 
@@ -39,10 +42,10 @@ class ProductMutationState {
   final bool success;
 
   const ProductMutationState(
-      {this.isLoading = false, this.error, this.success = false});
+      {this.isLoading = false, this.error, this.success = false,});
 
   ProductMutationState copyWith(
-          {bool? isLoading, String? error, bool? success}) =>
+          {bool? isLoading, String? error, bool? success,}) =>
       ProductMutationState(
         isLoading: isLoading ?? this.isLoading,
         error: error,
@@ -54,6 +57,13 @@ class ProductMutationNotifier
     extends AutoDisposeNotifier<ProductMutationState> {
   @override
   ProductMutationState build() => const ProductMutationState();
+
+  Future<String?> _uploadProductImage(File file) async {
+    return ref.read(cloudinaryServiceProvider).uploadImage(
+      file: file,
+      folder: 'product_media',
+    );
+  }
 
   Future<bool> create({
     required String name,
@@ -68,10 +78,7 @@ class ProductMutationNotifier
     try {
       String? imageUrl;
       if (imageFile != null) {
-        imageUrl = await ref.read(cloudinaryServiceProvider).uploadImage(
-              file: imageFile,
-              folder: 'products',
-            );
+        imageUrl = await _uploadProductImage(imageFile);
       }
 
       final ds = ref.read(vendorDatasourceProvider);
@@ -88,6 +95,8 @@ class ProductMutationNotifier
 
       state = const ProductMutationState(success: true);
       ref.read(vendorProductsProvider.notifier).refresh();
+      ref.invalidate(homeProductPoolProvider);
+      ref.invalidate(productsNotifierProvider);
       return true;
     } catch (e) {
       state = ProductMutationState(error: e.toString());
@@ -110,10 +119,7 @@ class ProductMutationNotifier
     try {
       String? imageUrl;
       if (imageFile != null) {
-        imageUrl = await ref.read(cloudinaryServiceProvider).uploadImage(
-              file: imageFile,
-              folder: 'products',
-            );
+        imageUrl = await _uploadProductImage(imageFile);
       }
 
       final dto = <String, dynamic>{
@@ -132,6 +138,8 @@ class ProductMutationNotifier
 
       state = const ProductMutationState(success: true);
       ref.read(vendorProductsProvider.notifier).refresh();
+      ref.invalidate(homeProductPoolProvider);
+      ref.invalidate(productsNotifierProvider);
       return true;
     } catch (e) {
       state = ProductMutationState(error: e.toString());
@@ -159,4 +167,4 @@ class ProductMutationNotifier
 
 final productMutationProvider =
     AutoDisposeNotifierProvider<ProductMutationNotifier, ProductMutationState>(
-        () => ProductMutationNotifier());
+        () => ProductMutationNotifier(),);
