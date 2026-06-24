@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../../wallet/presentation/providers/wallet_provider.dart';
 import '../../domain/entities/vtu.dart';
 import '../providers/vtu_provider.dart';
 
@@ -32,6 +34,8 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
   bool _meterVerified = false;
   bool _verifying = false;
   String? _meterType; // prepaid / postpaid for electricity
+  String _paymentMethod = 'WALLET';
+  bool _launched = false;
 
   @override
   void dispose() {
@@ -64,7 +68,7 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
         ? _selectedVariation!.amount
         : double.tryParse(_amountCtrl.text) ?? 0;
 
-    final success = await ref.read(vtuPurchaseProvider.notifier).purchase(
+    await ref.read(vtuPurchaseProvider.notifier).purchase(
           serviceType: _type.name,
           provider: _selectedServiceId!,
           amount: amount,
@@ -73,14 +77,39 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
               : _phoneCtrl.text.trim(),
           variationCode: _selectedVariation?.variationCode,
           billersCode: _type.needsMerchantVerify ? _meterCtrl.text.trim() : null,
+          paymentMethod: _paymentMethod,
         );
 
-    if (success && mounted) {
+    if (!mounted) return;
+    final ps = ref.read(vtuPurchaseProvider);
+
+    if (ps.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(ref.read(vtuPurchaseProvider).message ?? 'Success!'),
+          content: Text(ps.message ?? 'Purchase successful!'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.success,
+        ),
+      );
+      Navigator.pop(context);
+    } else if (ps.requiresPaystack) {
+      final uri = Uri.tryParse(ps.authorizationUrl!);
+      if (uri != null) {
+        final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (ok && mounted) {
+          setState(() => _launched = true);
+        }
+      }
+    }
+  }
+
+  Future<void> _confirmPayment() async {
+    await ref.read(vtuHistoryProvider.notifier).refresh();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('VTU history updated — check your transactions.'),
+          behavior: SnackBarBehavior.floating,
         ),
       );
       Navigator.pop(context);
@@ -92,6 +121,7 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
     final servicesAsync = ref.watch(vtuServicesProvider(_type.category));
     final purchaseState = ref.watch(vtuPurchaseProvider);
     final merchantState = ref.watch(vtuMerchantVerifyProvider);
+    final walletAsync = ref.watch(walletNotifierProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(_type.displayName)),
@@ -330,8 +360,20 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
 
                 const SizedBox(height: AppDimensions.spacingXl),
 
+                // ─── Payment method ────────────────────────────────
+                if (!_launched) ...[
+                  const _SectionLabel(text: 'Payment Method'),
+                  const SizedBox(height: AppDimensions.spacingSm),
+                  _PaymentMethodSelector(
+                    selected: _paymentMethod,
+                    walletBalance: walletAsync.valueOrNull?.balance,
+                    onChanged: (m) => setState(() => _paymentMethod = m),
+                  ),
+                  const SizedBox(height: AppDimensions.spacingLg),
+                ],
+
                 // ─── Error display ─────────────────────────────────
-                if (purchaseState.error != null)
+                if (purchaseState.error != null && !_launched)
                   Padding(
                     padding: const EdgeInsets.only(
                         bottom: AppDimensions.spacingMd,),
@@ -342,13 +384,68 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
                     ),
                   ),
 
+                // ─── Paystack post-launch state ────────────────────
+                if (_launched) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppDimensions.spacingMd),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                      border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.open_in_browser,
+                            color: AppColors.success, size: 32),
+                        const SizedBox(height: AppDimensions.spacingSm),
+                        Text(
+                          'Payment page opened in your browser.',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.success,
+                                fontWeight: FontWeight.w600,
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppDimensions.spacingXs),
+                        Text(
+                          'Complete the payment, then tap the button below.',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppDimensions.spacingMd),
+                  AppButton(
+                    label: 'I\'ve Paid — Confirm Purchase',
+                    onPressed: _confirmPayment,
+                    icon: const Icon(Icons.check_circle_outline),
+                  ),
+                  const SizedBox(height: AppDimensions.spacingSm),
+                  Center(
+                    child: TextButton(
+                      onPressed: () => setState(() => _launched = false),
+                      child: const Text('Cancel / Go back'),
+                    ),
+                  ),
+                ],
+
                 // ─── Submit ────────────────────────────────────────
-                AppButton(
-                  label: 'Proceed',
-                  onPressed: _canSubmit ? _submit : null,
-                  isLoading: purchaseState.isLoading,
-                  icon: const Icon(Icons.check_circle_outline),
-                ),
+                if (!_launched)
+                  AppButton(
+                    label: _paymentMethod == 'DIRECT'
+                        ? 'Pay with Paystack'
+                        : 'Proceed',
+                    onPressed: _canSubmit && !purchaseState.isLoading
+                        ? _submit
+                        : null,
+                    isLoading: purchaseState.isLoading,
+                    icon: Icon(_paymentMethod == 'DIRECT'
+                        ? Icons.payment_outlined
+                        : Icons.check_circle_outline),
+                  ),
               ],
             ],
           ),
@@ -496,4 +593,122 @@ class _SectionLabel extends StatelessWidget {
             .titleSmall
             ?.copyWith(fontWeight: FontWeight.w700),
       );
+}
+
+// ─── Payment method selector ──────────────────────────────────────────────────
+
+class _PaymentMethodSelector extends StatelessWidget {
+  final String selected;
+  final double? walletBalance;
+  final ValueChanged<String> onChanged;
+
+  const _PaymentMethodSelector({
+    required this.selected,
+    required this.walletBalance,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        _MethodTile(
+          value: 'WALLET',
+          selected: selected == 'WALLET',
+          icon: Icons.account_balance_wallet_outlined,
+          title: 'Pay from Wallet',
+          subtitle: walletBalance != null
+              ? 'Balance: ${Formatters.currency(walletBalance!)}'
+              : 'Your Cometake wallet',
+          onTap: () => onChanged('WALLET'),
+          theme: theme,
+        ),
+        const SizedBox(height: AppDimensions.spacingSm),
+        _MethodTile(
+          value: 'DIRECT',
+          selected: selected == 'DIRECT',
+          icon: Icons.credit_card_outlined,
+          title: 'Pay with Paystack',
+          subtitle: 'Card, bank transfer, USSD',
+          onTap: () => onChanged('DIRECT'),
+          theme: theme,
+        ),
+      ],
+    );
+  }
+}
+
+class _MethodTile extends StatelessWidget {
+  final String value;
+  final bool selected;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final ThemeData theme;
+
+  const _MethodTile({
+    required this.value,
+    required this.selected,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    required this.theme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.spacingMd,
+          vertical: AppDimensions.spacingSm,
+        ),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: selected
+                ? AppColors.primary
+                : theme.colorScheme.outlineVariant,
+            width: selected ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+          color: selected
+              ? AppColors.primary.withOpacity(0.04)
+              : theme.colorScheme.surface,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              color: selected ? AppColors.primary : theme.colorScheme.onSurfaceVariant,
+              size: 20,
+            ),
+            const SizedBox(width: AppDimensions.spacingMd),
+            Icon(icon, size: 20,
+                color: selected ? AppColors.primary : theme.colorScheme.onSurfaceVariant),
+            const SizedBox(width: AppDimensions.spacingSm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: selected ? AppColors.primary : null,
+                      )),
+                  Text(subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

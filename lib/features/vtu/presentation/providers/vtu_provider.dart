@@ -29,25 +29,35 @@ class VtuPurchaseState {
   final String? error;
   final bool success;
   final String? message;
+  final String? authorizationUrl;
+  final String? reference;
 
   const VtuPurchaseState({
     this.isLoading = false,
     this.error,
     this.success = false,
     this.message,
+    this.authorizationUrl,
+    this.reference,
   });
+
+  bool get requiresPaystack => authorizationUrl != null;
 
   VtuPurchaseState copyWith({
     bool? isLoading,
     String? error,
     bool? success,
     String? message,
+    String? authorizationUrl,
+    String? reference,
   }) =>
       VtuPurchaseState(
         isLoading: isLoading ?? this.isLoading,
         error: error,
         success: success ?? this.success,
         message: message ?? this.message,
+        authorizationUrl: authorizationUrl,
+        reference: reference,
       );
 }
 
@@ -62,6 +72,7 @@ class VtuPurchaseNotifier extends AutoDisposeNotifier<VtuPurchaseState> {
     required String recipient,
     String? variationCode,
     String? billersCode,
+    String paymentMethod = 'WALLET',
   }) async {
     state = const VtuPurchaseState(isLoading: true);
     try {
@@ -73,7 +84,17 @@ class VtuPurchaseNotifier extends AutoDisposeNotifier<VtuPurchaseState> {
         recipient: recipient,
         variationCode: variationCode,
         billersCode: billersCode,
+        paymentMethod: paymentMethod,
       );
+      // DIRECT payment: server returns authorization_url instead of completing
+      final authUrl = result['authorization_url']?.toString();
+      if (authUrl != null) {
+        state = VtuPurchaseState(
+          authorizationUrl: authUrl,
+          reference: result['reference']?.toString(),
+        );
+        return false;
+      }
       final msg = result['message']?.toString() ?? 'Purchase successful';
       state = VtuPurchaseState(success: true, message: msg);
       return true;

@@ -19,7 +19,7 @@ class VtuDatasource {
           '/api/v1/vtu/services/$category',);
       final content = res.data?['content'];
       if (content == null) return [];
-      final list = content is List ? content : (content as Map)['content'] ?? [];
+      final list = content is List ? content : (content as Map)['content'] ?? <dynamic>[];
       return (list as List)
           .map((e) => VtuServiceModel.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -77,6 +77,7 @@ class VtuDatasource {
     required String recipient,
     String? variationCode,
     String? billersCode,
+    String paymentMethod = 'WALLET',
   }) async {
     try {
       final res = await _dio.post<Map<String, dynamic>>(
@@ -88,7 +89,7 @@ class VtuDatasource {
           'recipient': recipient,
           if (variationCode != null) 'variationCode': variationCode,
           if (billersCode != null) 'billersCode': billersCode,
-          'paymentMethod': 'WALLET',
+          'paymentMethod': paymentMethod,
         },
       );
       return res.data ?? {};
