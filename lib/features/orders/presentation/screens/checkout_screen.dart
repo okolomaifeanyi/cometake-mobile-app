@@ -9,6 +9,7 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../auth/presentation/widgets/auth_text_field.dart';
+import '../../../cart/domain/entities/cart.dart';
 import '../../../cart/presentation/providers/cart_provider.dart';
 import '../../domain/entities/order.dart';
 import '../providers/orders_provider.dart';
@@ -157,7 +158,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 // ─── Order summary card ────────────────────────────────────────────────────────
 
 class _OrderSummaryCard extends StatelessWidget {
-  final dynamic cart;
+  final Cart cart;
   const _OrderSummaryCard({required this.cart});
 
   @override

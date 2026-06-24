@@ -6,11 +6,12 @@ import '../../../../core/services/cloudinary_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../shared/enums/order_status.dart';
+import '../../../../shared/enums/payment_status.dart';
 import '../../../../shared/widgets/app_error_widget.dart';
 import '../../../../shared/widgets/app_loading.dart';
 import '../../domain/entities/order.dart';
 import '../providers/orders_provider.dart';
-import '../widgets/order_tile.dart';
 
 class OrderDetailScreen extends ConsumerWidget {
   final String orderId;
@@ -192,7 +193,7 @@ class _OrderItemRow extends StatelessWidget {
 }
 
 class _StatusChip extends StatelessWidget {
-  final dynamic status;
+  final OrderStatus status;
   const _StatusChip({required this.status});
 
   @override
@@ -208,7 +209,7 @@ class _StatusChip extends StatelessWidget {
 }
 
 class _PaymentChip extends StatelessWidget {
-  final dynamic status;
+  final PaymentStatus status;
   const _PaymentChip({required this.status});
 
   @override
