@@ -2,12 +2,13 @@ import '../../../../core/errors/app_exception.dart';
 import '../../domain/entities/cart.dart';
 import '../../domain/repositories/cart_repository.dart';
 import '../datasources/supabase_cart_datasource.dart';
+import '../models/cart_model.dart';
 
 class CartRepositoryImpl implements CartRepository {
   final SupabaseCartDatasource _datasource;
   const CartRepositoryImpl(this._datasource);
 
-  Cart _toCart(List models) =>
+  Cart _toCart(List<CartItemModel> models) =>
       Cart(items: models.map((m) => m.toEntity()).toList());
 
   @override
@@ -29,7 +30,7 @@ class CartRepositoryImpl implements CartRepository {
   }) async {
     try {
       return _toCart(await _datasource.addItem(
-          userId: userId, productId: productId, quantity: quantity));
+          userId: userId, productId: productId, quantity: quantity,),);
     } on AppException {
       rethrow;
     } catch (_) {
@@ -45,7 +46,7 @@ class CartRepositoryImpl implements CartRepository {
   }) async {
     try {
       return _toCart(await _datasource.updateQuantity(
-          userId: userId, itemId: itemId, quantity: quantity));
+          userId: userId, itemId: itemId, quantity: quantity,),);
     } on AppException {
       rethrow;
     } catch (_) {
@@ -60,7 +61,7 @@ class CartRepositoryImpl implements CartRepository {
   }) async {
     try {
       return _toCart(
-          await _datasource.removeItem(userId: userId, itemId: itemId));
+          await _datasource.removeItem(userId: userId, itemId: itemId),);
     } on AppException {
       rethrow;
     } catch (_) {

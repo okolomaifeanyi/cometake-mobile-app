@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/vtu_datasource.dart';
+import '../../data/models/vtu_model.dart';
 import '../../domain/entities/vtu.dart';
 
 // ─── Services per category ────────────────────────────────────────────────────
@@ -87,7 +88,7 @@ class VtuPurchaseNotifier extends AutoDisposeNotifier<VtuPurchaseState> {
 
 final vtuPurchaseProvider =
     AutoDisposeNotifierProvider<VtuPurchaseNotifier, VtuPurchaseState>(
-        () => VtuPurchaseNotifier());
+        () => VtuPurchaseNotifier(),);
 
 // ─── Merchant verify ──────────────────────────────────────────────────────────
 
@@ -141,4 +142,4 @@ class VtuHistoryNotifier extends AsyncNotifier<List<VtuTransaction>> {
 
 final vtuHistoryProvider =
     AsyncNotifierProvider<VtuHistoryNotifier, List<VtuTransaction>>(
-        () => VtuHistoryNotifier());
+        () => VtuHistoryNotifier(),);

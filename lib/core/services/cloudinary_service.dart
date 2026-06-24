@@ -88,5 +88,5 @@ class CloudinaryService {
     );
   }
 
-  static String banner(String url) => optimized(url, width: 800, crop: 'fill');
+  static String banner(String url) => optimized(url, width: 800);
 }

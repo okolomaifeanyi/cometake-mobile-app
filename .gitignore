@@ -35,6 +35,10 @@ ios/Runner.xcworkspace/
 .env.staging.json
 .env.production.json
 
+# Google OAuth credentials
+*client_secret*.json
+google-services.json
+
 # IDEs
 .idea/
 *.iml

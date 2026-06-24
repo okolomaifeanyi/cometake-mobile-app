@@ -153,7 +153,7 @@ class AuthPhoneField extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuthTextField(
         label: 'Phone number',
-        hint: '08012345678',
+        hint: '8012345678',
         controller: controller,
         validator: validator,
         keyboardType: TextInputType.phone,

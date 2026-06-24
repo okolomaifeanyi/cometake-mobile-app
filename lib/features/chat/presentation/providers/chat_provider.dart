@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/supabase/supabase_module.dart';
 import '../../data/datasources/chat_datasource.dart';
+import '../../data/models/chat_model.dart';
 import '../../domain/entities/chat.dart';
 
 // ─── Current user ID helper ───────────────────────────────────────────────────
@@ -39,7 +40,7 @@ class ConversationsNotifier extends AsyncNotifier<List<ChatRoom>> {
 
 final conversationsProvider =
     AsyncNotifierProvider<ConversationsNotifier, List<ChatRoom>>(
-        () => ConversationsNotifier());
+        () => ConversationsNotifier(),);
 
 // ─── Messages notifier (per conversation, with realtime) ──────────────────────
 
@@ -110,4 +111,4 @@ class MessagesNotifier
 
 final messagesProvider = AsyncNotifierProvider.autoDispose
     .family<MessagesNotifier, List<ChatMessage>, String>(
-        () => MessagesNotifier());
+        () => MessagesNotifier(),);

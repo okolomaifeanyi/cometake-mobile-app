@@ -64,7 +64,7 @@ class SupabaseOrdersDatasource {
       if (e.code == 'PGRST116') throw const NotFoundException('Order not found');
       throw ServerException(e.message);
     } catch (e) {
-      throw ServerException('Failed to load order.');
+      throw const ServerException('Failed to load order.');
     }
   }
 
@@ -125,7 +125,7 @@ class SupabaseOrdersDatasource {
 
       return AddressModel.fromJson(Map<String, dynamic>.from(row as Map));
     } catch (e) {
-      throw ServerException('Failed to save address.');
+      throw const ServerException('Failed to save address.');
     }
   }
 
@@ -145,7 +145,7 @@ class SupabaseOrdersDatasource {
       final msg = e.response?.data?['error'] as String? ?? 'Failed to place order.';
       throw ServerException(msg, statusCode: e.response?.statusCode);
     } catch (e) {
-      throw ServerException('Failed to place order.');
+      throw const ServerException('Failed to place order.');
     }
   }
 }
@@ -158,4 +158,4 @@ final ordersDataSourceProvider = Provider<SupabaseOrdersDatasource>((ref) {
   );
   final dio = ref.watch(dioProvider);
   return SupabaseOrdersDatasource(client, dio);
-}, name: 'ordersDataSourceProvider');
+}, name: 'ordersDataSourceProvider',);

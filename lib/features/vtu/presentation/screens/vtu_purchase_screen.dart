@@ -110,10 +110,17 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
                     child: Padding(
                   padding: EdgeInsets.all(AppDimensions.spacingMd),
                   child: CircularProgressIndicator(strokeWidth: 2),
-                )),
-                error: (e, _) => Text(e.toString(),
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.error)),
+                ),),
+                error: (e, _) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      e is Exception
+                          ? e.toString().replaceFirst(RegExp(r'^.*Exception:\s*'), '')
+                          : e.toString(),
+                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 data: (services) => _ProviderGrid(
                   services: services,
                   selected: _selectedServiceId,
@@ -132,7 +139,7 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
                 // ─── Variations (data / cable) ─────────────────────
                 if (_type.hasVariations) ...[
                   _SectionLabel(
-                      text: _type == VtuServiceType.data ? 'Select Bundle' : 'Select Plan'),
+                      text: _type == VtuServiceType.data ? 'Select Bundle' : 'Select Plan',),
                   const SizedBox(height: AppDimensions.spacingSm),
                   _VariationPicker(
                     serviceId: _selectedServiceId!,
@@ -148,7 +155,7 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
                   _SectionLabel(
                       text: _type == VtuServiceType.electricity
                           ? 'Meter Number'
-                          : 'SmartCard / Decoder Number'),
+                          : 'SmartCard / Decoder Number',),
                   const SizedBox(height: AppDimensions.spacingSm),
                   if (_type == VtuServiceType.electricity) ...[
                     Row(
@@ -156,7 +163,7 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
                         return Expanded(
                           child: RadioListTile<String>(
                             title: Text(t[0].toUpperCase() + t.substring(1),
-                                style: const TextStyle(fontSize: 13)),
+                                style: const TextStyle(fontSize: 13),),
                             value: t,
                             groupValue: _meterType,
                             onChanged: (v) => setState(() {
@@ -180,7 +187,7 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
                           : 'Enter smartcard number',
                       border: OutlineInputBorder(
                           borderRadius:
-                              BorderRadius.circular(AppDimensions.radiusMd)),
+                              BorderRadius.circular(AppDimensions.radiusMd),),
                       suffixIcon: TextButton(
                         onPressed: _verifying ? null : _verifyMerchant,
                         child: _verifying
@@ -188,14 +195,14 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
                                 width: 16,
                                 height: 16,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2))
+                                    strokeWidth: 2,),)
                             : const Text('Verify'),
                       ),
                     ),
                     validator: (v) => Validators.required(v,
                         label: _type == VtuServiceType.electricity
                             ? 'Meter number'
-                            : 'Smartcard number'),
+                            : 'Smartcard number',),
                     onChanged: (_) => setState(() => _meterVerified = false),
                   ),
                   if (merchantState.valueOrNull != null) ...[
@@ -207,19 +214,19 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
                         borderRadius:
                             BorderRadius.circular(AppDimensions.radiusMd),
                         border: Border.all(
-                            color: AppColors.success.withOpacity(0.3)),
+                            color: AppColors.success.withOpacity(0.3),),
                       ),
                       child: Row(
                         children: [
                           const Icon(Icons.check_circle,
-                              color: AppColors.success, size: 18),
+                              color: AppColors.success, size: 18,),
                           const SizedBox(width: AppDimensions.spacingSm),
                           Expanded(
                             child: Text(
                               merchantState.valueOrNull!.customerName,
                               style: const TextStyle(
                                   color: AppColors.success,
-                                  fontWeight: FontWeight.w600),
+                                  fontWeight: FontWeight.w600,),
                             ),
                           ),
                         ],
@@ -233,7 +240,7 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
                         merchantState.error.toString(),
                         style: TextStyle(
                             color: Theme.of(context).colorScheme.error,
-                            fontSize: 12),
+                            fontSize: 12,),
                       ),
                     ),
                 ],
@@ -252,7 +259,7 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
                       prefixText: '+234  ',
                       border: OutlineInputBorder(
                           borderRadius:
-                              BorderRadius.circular(AppDimensions.radiusMd)),
+                              BorderRadius.circular(AppDimensions.radiusMd),),
                     ),
                     validator: (v) => Validators.phone(v ?? ''),
                   ),
@@ -272,7 +279,7 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
                       hintText: '500',
                       border: OutlineInputBorder(
                           borderRadius:
-                              BorderRadius.circular(AppDimensions.radiusMd)),
+                              BorderRadius.circular(AppDimensions.radiusMd),),
                     ),
                     validator: (v) {
                       final n = double.tryParse(v ?? '');
@@ -327,11 +334,11 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
                 if (purchaseState.error != null)
                   Padding(
                     padding: const EdgeInsets.only(
-                        bottom: AppDimensions.spacingMd),
+                        bottom: AppDimensions.spacingMd,),
                     child: Text(
                       purchaseState.error!,
                       style: TextStyle(
-                          color: Theme.of(context).colorScheme.error),
+                          color: Theme.of(context).colorScheme.error,),
                     ),
                   ),
 
@@ -416,10 +423,10 @@ class _VariationPicker extends ConsumerWidget {
           child: Padding(
         padding: EdgeInsets.all(AppDimensions.spacingMd),
         child: CircularProgressIndicator(strokeWidth: 2),
-      )),
+      ),),
       error: (e, _) => Text(e.toString(),
           style:
-              TextStyle(color: Theme.of(context).colorScheme.error)),
+              TextStyle(color: Theme.of(context).colorScheme.error),),
       data: (variations) => Column(
         children: variations.map((v) {
           final isSelected = selected?.variationCode == v.variationCode;
@@ -453,7 +460,7 @@ class _VariationPicker extends ConsumerWidget {
                             ?.copyWith(
                                 fontWeight: isSelected
                                     ? FontWeight.w700
-                                    : FontWeight.normal)),
+                                    : FontWeight.normal,),),
                   ),
                   Text(
                     Formatters.currency(v.amount),

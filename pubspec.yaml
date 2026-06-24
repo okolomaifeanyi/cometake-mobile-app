@@ -32,8 +32,12 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   connectivity_plus: ^6.1.4
 
-  # Browser / Payments
+  # Browser / Payments / Deep links
   url_launcher: ^6.3.1
+  app_links: ^6.3.2
+
+  # Native Google Sign-In (bypasses browser/WebView entirely)
+  google_sign_in: ^6.2.1
 
   # Utilities
   shared_preferences: ^2.3.3
@@ -49,6 +53,13 @@ dev_dependencies:
   freezed: ^2.5.7
   json_serializable: ^6.9.5
   mocktail: ^1.0.4
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/cometake.jpg"
+  min_sdk_android: 21
 
 flutter:
   uses-material-design: true

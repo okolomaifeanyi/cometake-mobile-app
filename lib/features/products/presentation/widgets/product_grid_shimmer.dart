@@ -37,7 +37,7 @@ class _ProductCardShimmer extends StatelessWidget {
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ShimmerBox(
+          const ShimmerBox(
             width: double.infinity,
             height: AppDimensions.productCardImageHeight,
             radius: AppDimensions.radiusMd,

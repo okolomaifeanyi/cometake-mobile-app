@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import '../../../products/data/models/product_model.dart';
 import '../../../products/domain/entities/product.dart';
 import '../../../products/presentation/providers/products_provider.dart';
 import '../../data/datasources/vendor_datasource.dart';
+import '../../data/models/subscription_models.dart';
 
 // ─── Vendor products list ─────────────────────────────────────────────────────
 
@@ -94,7 +96,7 @@ class ProductMutationNotifier
       });
 
       state = const ProductMutationState(success: true);
-      ref.read(vendorProductsProvider.notifier).refresh();
+      unawaited(ref.read(vendorProductsProvider.notifier).refresh());
       ref.invalidate(homeProductPoolProvider);
       ref.invalidate(productsNotifierProvider);
       return true;
@@ -137,7 +139,7 @@ class ProductMutationNotifier
       await ds.updateProduct(productId, dto);
 
       state = const ProductMutationState(success: true);
-      ref.read(vendorProductsProvider.notifier).refresh();
+      unawaited(ref.read(vendorProductsProvider.notifier).refresh());
       ref.invalidate(homeProductPoolProvider);
       ref.invalidate(productsNotifierProvider);
       return true;
@@ -168,3 +170,54 @@ class ProductMutationNotifier
 final productMutationProvider =
     AutoDisposeNotifierProvider<ProductMutationNotifier, ProductMutationState>(
         () => ProductMutationNotifier(),);
+
+// ─── Subscription providers ───────────────────────────────────────────────────
+
+final subscriptionPlansProvider =
+    FutureProvider.autoDispose<List<SubscriptionPlan>>((ref) {
+  return ref.watch(vendorDatasourceProvider).getPlans();
+});
+
+final myVendorSubscriptionProvider =
+    FutureProvider.autoDispose<VendorSubscription?>((ref) {
+  return ref.watch(vendorDatasourceProvider).getMySubscription();
+});
+
+// ─── Subscribe action notifier ────────────────────────────────────────────────
+
+class SubscribeState {
+  final bool isLoading;
+  final String? error;
+  final bool success;
+
+  const SubscribeState({this.isLoading = false, this.error, this.success = false});
+
+  SubscribeState copyWith({bool? isLoading, String? error, bool? success}) =>
+      SubscribeState(
+        isLoading: isLoading ?? this.isLoading,
+        error: error,
+        success: success ?? this.success,
+      );
+}
+
+class SubscribeNotifier extends AutoDisposeNotifier<SubscribeState> {
+  @override
+  SubscribeState build() => const SubscribeState();
+
+  Future<bool> subscribe(String planId) async {
+    state = const SubscribeState(isLoading: true);
+    try {
+      await ref.read(vendorDatasourceProvider).subscribeToPlan(planId);
+      ref.invalidate(myVendorSubscriptionProvider);
+      state = const SubscribeState(success: true);
+      return true;
+    } catch (e) {
+      state = SubscribeState(error: e.toString());
+      return false;
+    }
+  }
+}
+
+final subscribeNotifierProvider =
+    AutoDisposeNotifierProvider<SubscribeNotifier, SubscribeState>(
+        () => SubscribeNotifier(),);

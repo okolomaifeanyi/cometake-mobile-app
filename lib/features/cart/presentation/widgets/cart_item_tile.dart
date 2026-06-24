@@ -51,7 +51,7 @@ class CartItemTile extends StatelessWidget {
                 child: item.imageUrl != null
                     ? CachedNetworkImage(
                         imageUrl: CloudinaryService.thumbnail(
-                            item.imageUrl!, size: 144),
+                            item.imageUrl!, size: 144,),
                         fit: BoxFit.cover,
                         placeholder: (_, __) => _PlaceholderBox(),
                         errorWidget: (_, __, ___) => _PlaceholderBox(),
@@ -69,7 +69,7 @@ class CartItemTile extends StatelessWidget {
                   Text(
                     item.productName,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600),
+                        fontWeight: FontWeight.w600,),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -120,7 +120,7 @@ class CartItemTile extends StatelessWidget {
                 GestureDetector(
                   onTap: onRemove,
                   child: Icon(Icons.close, size: 16,
-                      color: colorScheme.onSurfaceVariant),
+                      color: colorScheme.onSurfaceVariant,),
                 ),
               ],
             ),
@@ -179,7 +179,7 @@ class _StepBtn extends StatelessWidget {
           height: 28,
           decoration: BoxDecoration(
             border: Border.all(
-                color: Theme.of(context).colorScheme.outlineVariant),
+                color: Theme.of(context).colorScheme.outlineVariant,),
             borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
           ),
           child: Icon(icon, size: 16),
@@ -192,6 +192,6 @@ class _PlaceholderBox extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         color: AppColors.primary.withOpacity(0.06),
         child: Icon(Icons.image_outlined,
-            size: 24, color: AppColors.primary.withOpacity(0.3)),
+            size: 24, color: AppColors.primary.withOpacity(0.3),),
       );
 }

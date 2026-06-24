@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/extensions/async_value_extensions.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_dimensions.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../domain/entities/auth_user.dart';
@@ -43,7 +44,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           email: _emailCtrl.text.trim(),
           password: _passwordCtrl.text,
           fullName: _nameCtrl.text.trim(),
-          phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+          phone: _phoneCtrl.text.trim().isEmpty ? null : Formatters.toE164(_phoneCtrl.text.trim()),
         );
   }
 
@@ -139,7 +140,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 // ─── Password ─────────────────────────────────────────────
                 AuthPasswordField(
-                  label: 'Password',
                   controller: _passwordCtrl,
                   validator: Validators.password,
                   textInputAction: TextInputAction.next,
@@ -153,7 +153,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   controller: _confirmCtrl,
                   validator: (v) =>
                       Validators.confirmPassword(v, _passwordCtrl.text),
-                  textInputAction: TextInputAction.done,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                 ),
 

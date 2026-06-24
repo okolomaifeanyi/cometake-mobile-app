@@ -13,4 +13,5 @@ abstract class AuthDatasource {
   Future<void> sendPhoneOtp({required String phone});
   Future<void> verifyPhoneOtp({required String phone, required String token});
   Future<void> resetPassword({required String email});
+  Future<void> signInWithGoogle();
 }

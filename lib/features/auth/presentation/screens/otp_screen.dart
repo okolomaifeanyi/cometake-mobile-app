@@ -156,7 +156,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                       color: AppColors.primary.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.sms_outlined,
                       size: 36,
                       color: AppColors.primary,

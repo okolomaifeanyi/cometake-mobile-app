@@ -82,10 +82,10 @@ class _OrderList extends StatelessWidget {
           children: [
             Icon(Icons.receipt_long_outlined,
                 size: 64,
-                color: Theme.of(context).colorScheme.onSurfaceVariant),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,),
             const SizedBox(height: AppDimensions.spacingMd),
             Text('No orders yet',
-                style: Theme.of(context).textTheme.titleMedium),
+                style: Theme.of(context).textTheme.titleMedium,),
           ],
         ),
       );

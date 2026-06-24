@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthChangeEvent, AuthState;
 
 import '../../../../core/errors/error_handler.dart';
 import '../../../../core/supabase/supabase_module.dart';
@@ -57,8 +59,21 @@ final currentUserProvider = Provider<AuthUser?>((ref) {
 
 class AuthNotifier extends AsyncNotifier<AuthUser?> {
   @override
-  Future<AuthUser?> build() =>
-      ref.read(authRepositoryProvider).getCurrentUser();
+  Future<AuthUser?> build() async {
+    // Subscribe once so that OAuth redirects and sign-outs update this notifier
+    // independently of the GoRouter refresh notifier.
+    final client = ref.read(supabaseClientProvider);
+    final sub = client.auth.onAuthStateChange.listen((AuthState event) {
+      if (event.event == AuthChangeEvent.signedIn && !state.isLoading) {
+        ref.invalidateSelf();
+      }
+      if (event.event == AuthChangeEvent.signedOut) {
+        state = const AsyncData(null);
+      }
+    });
+    ref.onDispose(sub.cancel);
+    return ref.read(authRepositoryProvider).getCurrentUser();
+  }
 
   Future<void> signIn({
     required String email,
@@ -117,6 +132,14 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
 
   Future<void> resetPassword({required String email}) =>
       ref.read(authRepositoryProvider).resetPassword(email: email);
+
+  Future<void> signInWithGoogle() async {
+    try {
+      await ref.read(authRepositoryProvider).signInWithGoogle();
+    } catch (e, st) {
+      state = AsyncError(ErrorHandler.handle(e), st);
+    }
+  }
 
   // ─── Profile bridge ─────────────────────────────────────────────────────────
   // Called by profile_provider.dart after a successful profile update so that

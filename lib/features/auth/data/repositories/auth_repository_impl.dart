@@ -1,6 +1,7 @@
 import '../../domain/entities/auth_user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_datasource.dart';
+import '../models/auth_user_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthDatasource _datasource;
@@ -54,4 +55,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> resetPassword({required String email}) =>
       _datasource.resetPassword(email: email);
+
+  @override
+  Future<void> signInWithGoogle() => _datasource.signInWithGoogle();
 }

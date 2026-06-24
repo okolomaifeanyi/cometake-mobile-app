@@ -1,5 +1,5 @@
-import '../models/product_model.dart';
 import '../../domain/entities/product.dart';
+import '../models/product_model.dart';
 
 abstract class ProductsDatasource {
   Future<List<ProductModel>> getProducts({

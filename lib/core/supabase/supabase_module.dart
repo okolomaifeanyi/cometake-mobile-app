@@ -13,10 +13,10 @@ abstract final class SupabaseModule {
     await Supabase.initialize(
       url: Env.supabaseUrl,
       anonKey: Env.supabaseAnonKey,
-      authOptions: const FlutterAuthClientOptions(
-        authFlowType: AuthFlowType.pkce,
-        autoRefreshToken: true,
-      ),
+      // PKCE is the default and the only flow that reliably works on Android:
+      // Android Intents strip URL fragments, so implicit flow (tokens in #fragment)
+      // never reaches the app. PKCE sends a one-time ?code= in the query string
+      // which Android preserves, then exchanges it server-side.
     );
   }
 }

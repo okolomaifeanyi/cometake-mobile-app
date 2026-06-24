@@ -61,7 +61,7 @@ class SupabaseCartDatasource {
 
       return getCartItems(userId);
     } catch (e) {
-      throw ServerException('Failed to add item to cart.');
+      throw const ServerException('Failed to add item to cart.');
     }
   }
 
@@ -78,7 +78,7 @@ class SupabaseCartDatasource {
           .eq('user_id', userId);
       return getCartItems(userId);
     } catch (e) {
-      throw ServerException('Failed to update quantity.');
+      throw const ServerException('Failed to update quantity.');
     }
   }
 
@@ -94,7 +94,7 @@ class SupabaseCartDatasource {
           .eq('user_id', userId);
       return getCartItems(userId);
     } catch (e) {
-      throw ServerException('Failed to remove item.');
+      throw const ServerException('Failed to remove item.');
     }
   }
 
@@ -105,7 +105,7 @@ class SupabaseCartDatasource {
           .delete()
           .eq('user_id', userId);
     } catch (e) {
-      throw ServerException('Failed to clear cart.');
+      throw const ServerException('Failed to clear cart.');
     }
   }
 }

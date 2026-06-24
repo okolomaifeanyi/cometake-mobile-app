@@ -68,7 +68,7 @@ class _OrderDetailView extends StatelessWidget {
                     children: [
                       Text('Order Status',
                           style: theme.textTheme.labelMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant)),
+                              color: colorScheme.onSurfaceVariant,),),
                       _StatusChip(status: order.status),
                     ],
                   ),
@@ -78,7 +78,7 @@ class _OrderDetailView extends StatelessWidget {
                     children: [
                       Text('Payment',
                           style: theme.textTheme.labelMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant)),
+                              color: colorScheme.onSurfaceVariant,),),
                       _PaymentChip(status: order.paymentStatus),
                     ],
                   ),
@@ -88,9 +88,9 @@ class _OrderDetailView extends StatelessWidget {
                     children: [
                       Text('Placed',
                           style: theme.textTheme.labelMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant)),
+                              color: colorScheme.onSurfaceVariant,),),
                       Text(Formatters.dateTime(order.createdAt),
-                          style: theme.textTheme.bodySmall),
+                          style: theme.textTheme.bodySmall,),
                     ],
                   ),
                 ],
@@ -100,7 +100,7 @@ class _OrderDetailView extends StatelessWidget {
             const SizedBox(height: AppDimensions.spacingLg),
             Text('Items (${order.itemCount})',
                 style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w700)),
+                    ?.copyWith(fontWeight: FontWeight.w700),),
             const SizedBox(height: AppDimensions.spacingSm),
 
             // ─── Items list ────────────────────────────────────────
@@ -114,7 +114,7 @@ class _OrderDetailView extends StatelessWidget {
               children: [
                 Text('Total',
                     style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w700)),
+                        ?.copyWith(fontWeight: FontWeight.w700),),
                 Text(
                   Formatters.currency(order.total),
                   style: theme.textTheme.titleMedium?.copyWith(
@@ -152,12 +152,12 @@ class _OrderItemRow extends StatelessWidget {
               child: item.product?.imageUrl != null
                   ? CachedNetworkImage(
                       imageUrl: CloudinaryService.thumbnail(
-                          item.product!.imageUrl!, size: 112),
+                          item.product!.imageUrl!, size: 112,),
                       fit: BoxFit.cover,
                     )
                   : Container(
                       color: AppColors.primary.withOpacity(0.06),
-                      child: const Icon(Icons.image_outlined, size: 24)),
+                      child: const Icon(Icons.image_outlined, size: 24),),
             ),
           ),
           const SizedBox(width: AppDimensions.spacingMd),
@@ -168,14 +168,14 @@ class _OrderItemRow extends StatelessWidget {
                 Text(
                   item.product?.name ?? 'Product',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600),
+                      fontWeight: FontWeight.w600,),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   '${item.quantity} × ${Formatters.currency(item.price)}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant),
+                      color: theme.colorScheme.onSurfaceVariant,),
                 ),
               ],
             ),
@@ -233,7 +233,7 @@ class _StatusChipWidget extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-              color: color, fontSize: 11, fontWeight: FontWeight.w600),
+              color: color, fontSize: 11, fontWeight: FontWeight.w600,),
         ),
       );
 }

@@ -46,9 +46,9 @@ class MessageBubble extends StatelessWidget {
                     topLeft: const Radius.circular(AppDimensions.radiusMd),
                     topRight: const Radius.circular(AppDimensions.radiusMd),
                     bottomLeft: Radius.circular(
-                        isMe ? AppDimensions.radiusMd : AppDimensions.radiusXs),
+                        isMe ? AppDimensions.radiusMd : AppDimensions.radiusXs,),
                     bottomRight: Radius.circular(
-                        isMe ? AppDimensions.radiusXs : AppDimensions.radiusMd),
+                        isMe ? AppDimensions.radiusXs : AppDimensions.radiusMd,),
                   ),
                 ),
                 child: Text(
@@ -65,7 +65,7 @@ class MessageBubble extends StatelessWidget {
                   padding: const EdgeInsets.only(
                       top: 2,
                       left: AppDimensions.spacingXs,
-                      right: AppDimensions.spacingXs),
+                      right: AppDimensions.spacingXs,),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

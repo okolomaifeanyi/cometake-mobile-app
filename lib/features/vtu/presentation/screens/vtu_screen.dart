@@ -346,7 +346,9 @@ class _VtuHistorySection extends ConsumerWidget {
           error: (e, _) => Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: AppErrorWidget(
-              message: e.toString(),
+              message: e is Exception
+                  ? e.toString().replaceFirst(RegExp(r'^.*Exception:\s*'), '')
+                  : e.toString(),
               onRetry: () => ref.read(vtuHistoryProvider.notifier).refresh(),
             ),
           ),

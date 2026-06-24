@@ -2,6 +2,7 @@ import '../../../../core/errors/app_exception.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/repositories/products_repository.dart';
 import '../datasources/products_datasource.dart';
+import '../models/product_model.dart';
 
 class ProductsRepositoryImpl implements ProductsRepository {
   final ProductsDatasource _datasource;
@@ -34,7 +35,7 @@ class ProductsRepositoryImpl implements ProductsRepository {
     } on AppException {
       rethrow;
     } catch (e) {
-      throw ServerException('Products unavailable. Please try again.');
+      throw const ServerException('Products unavailable. Please try again.');
     }
   }
 
@@ -46,7 +47,7 @@ class ProductsRepositoryImpl implements ProductsRepository {
     } on AppException {
       rethrow;
     } catch (e) {
-      throw ServerException('Could not load product.');
+      throw const ServerException('Could not load product.');
     }
   }
 

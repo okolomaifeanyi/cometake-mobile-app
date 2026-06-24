@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/network/dio_client.dart';
@@ -16,7 +16,7 @@ class VtuDatasource {
   Future<List<VtuServiceModel>> fetchServices(String category) async {
     try {
       final res = await _dio.get<Map<String, dynamic>>(
-          '/api/v1/vtu/services/$category');
+          '/api/v1/vtu/services/$category',);
       final content = res.data?['content'];
       if (content == null) return [];
       final list = content is List ? content : (content as Map)['content'] ?? [];
@@ -25,14 +25,14 @@ class VtuDatasource {
           .toList();
     } on DioException catch (e) {
       throw ServerException(
-          e.response?.data?['error']?.toString() ?? 'Failed to load services');
+          e.response?.data?['error']?.toString() ?? 'Failed to load services',);
     }
   }
 
   Future<List<VtuVariationModel>> fetchVariations(String serviceId) async {
     try {
       final res = await _dio.get<Map<String, dynamic>>(
-          '/api/v1/vtu/variations/$serviceId');
+          '/api/v1/vtu/variations/$serviceId',);
       final content = res.data?['content'];
       if (content == null) return [];
       // VTPass: { content: { varations: [...] } }
@@ -43,7 +43,7 @@ class VtuDatasource {
           .toList();
     } on DioException catch (e) {
       throw ServerException(
-          e.response?.data?['error']?.toString() ?? 'Failed to load bundles');
+          e.response?.data?['error']?.toString() ?? 'Failed to load bundles',);
     }
   }
 
@@ -66,7 +66,7 @@ class VtuDatasource {
       return VtuMerchantModel.fromJson(content as Map<String, dynamic>);
     } on DioException catch (e) {
       throw ServerException(
-          e.response?.data?['error']?.toString() ?? 'Verification failed');
+          e.response?.data?['error']?.toString() ?? 'Verification failed',);
     }
   }
 
@@ -107,7 +107,7 @@ class VtuDatasource {
       final rows = await _client
           .from('vtu_transactions')
           .select(
-              'id, service_type, provider, amount, recipient, status, reference, created_at')
+              'id, service_type, provider, amount, recipient, status, reference, created_at',)
           .eq('user_id', userId)
           .order('created_at', ascending: false)
           .limit(50);

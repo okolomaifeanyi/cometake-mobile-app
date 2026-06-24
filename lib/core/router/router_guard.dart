@@ -10,8 +10,12 @@ abstract final class RouterGuard {
   };
 
   static String? redirect(String location, {required bool isAuthenticated}) {
-    final isPublic = _publicRoutes.contains(location);
+    // Splash is a gateway — always forward to the correct destination.
+    if (location == AppRoutes.splash) {
+      return isAuthenticated ? AppRoutes.home : AppRoutes.login;
+    }
 
+    final isPublic = _publicRoutes.contains(location);
     if (!isAuthenticated && !isPublic) return AppRoutes.login;
     if (isAuthenticated && isPublic) return AppRoutes.home;
     return null;

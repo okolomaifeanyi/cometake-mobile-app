@@ -20,7 +20,9 @@ const _sortOptions = [
 ];
 
 class ProductsScreen extends ConsumerStatefulWidget {
-  const ProductsScreen({super.key});
+  final String? initialCategory;
+
+  const ProductsScreen({super.key, this.initialCategory});
 
   @override
   ConsumerState<ProductsScreen> createState() => _ProductsScreenState();
@@ -29,12 +31,18 @@ class ProductsScreen extends ConsumerStatefulWidget {
 class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
-  final _debouncer = Debouncer(delay: const Duration(milliseconds: 450));
+  final _debouncer = Debouncer(duration: const Duration(milliseconds: 450));
 
   @override
   void initState() {
     super.initState();
     _scrollCtrl.addListener(_onScroll);
+    final cat = widget.initialCategory;
+    if (cat != null && cat.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(productsNotifierProvider.notifier).applyCategory(cat);
+      });
+    }
   }
 
   @override
@@ -304,7 +312,6 @@ class _SortChip extends StatelessWidget {
       onSelected: onSelected,
       itemBuilder: (_) => [
         const PopupMenuItem<String?>(
-          value: null,
           child: Text('Default (Newest)'),
         ),
         ..._sortOptions.map(
@@ -325,7 +332,6 @@ class _SortChip extends StatelessWidget {
             color: isActive
                 ? AppColors.primary
                 : Theme.of(context).colorScheme.outlineVariant,
-            width: 1,
           ),
         ),
         child: Row(
@@ -400,7 +406,7 @@ class _ProductGrid extends StatelessWidget {
                     child: ProductCard(
                       product: products[left],
                       onTap: () => context.push(
-                          AppRoutes.productDetailPath(products[left].id)),
+                          AppRoutes.productDetailPath(products[left].id),),
                     ),
                   ),
                   const SizedBox(width: AppDimensions.spacingMd),
@@ -409,7 +415,7 @@ class _ProductGrid extends StatelessWidget {
                         ? ProductCard(
                             product: products[right],
                             onTap: () => context.push(
-                                AppRoutes.productDetailPath(products[right].id)),
+                                AppRoutes.productDetailPath(products[right].id),),
                           )
                         : const SizedBox.shrink(),
                   ),

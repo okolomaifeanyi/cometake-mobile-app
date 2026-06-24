@@ -78,7 +78,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 style: Theme.of(context)
                     .textTheme
                     .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w700)),
+                    ?.copyWith(fontWeight: FontWeight.w700),),
             const SizedBox(height: AppDimensions.spacingSm),
             cartAsync.whenOrNull(
               data: (cart) => _OrderSummaryCard(cart: cart),
@@ -94,7 +94,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     style: Theme.of(context)
                         .textTheme
                         .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w700)),
+                        ?.copyWith(fontWeight: FontWeight.w700),),
                 TextButton(
                   onPressed: () =>
                       setState(() => _showAddressForm = !_showAddressForm),
@@ -172,7 +172,7 @@ class _OrderSummaryCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text('${cart.totalItems} ${cart.totalItems == 1 ? 'item' : 'items'}',
-              style: Theme.of(context).textTheme.bodyMedium),
+              style: Theme.of(context).textTheme.bodyMedium,),
           Text(
             Formatters.currency(cart.subtotal),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -238,15 +238,15 @@ class _AddressPicker extends StatelessWidget {
                           style: Theme.of(context)
                               .textTheme
                               .bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.w600)),
+                              ?.copyWith(fontWeight: FontWeight.w600),),
                       Text(a.summary,
-                          style: Theme.of(context).textTheme.bodySmall),
+                          style: Theme.of(context).textTheme.bodySmall,),
                       Text(a.phone,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Theme.of(context)
                                     .colorScheme
                                     .onSurfaceVariant,
-                              )),
+                              ),),
                     ],
                   ),
                 ),
@@ -257,11 +257,11 @@ class _AddressPicker extends StatelessWidget {
                       color: AppColors.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
                     ),
-                    child: Text('Default',
+                    child: const Text('Default',
                         style: TextStyle(
                             color: AppColors.primary,
                             fontSize: 10,
-                            fontWeight: FontWeight.w600)),
+                            fontWeight: FontWeight.w600,),),
                   ),
               ],
             ),
@@ -335,7 +335,6 @@ class _AddressFormState extends ConsumerState<_AddressForm> {
           AuthPhoneField(
             controller: _phoneCtrl,
             validator: (v) => Validators.phone(v ?? ''),
-            textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: AppDimensions.spacingMd),
           AuthTextField(

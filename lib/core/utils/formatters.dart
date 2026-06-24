@@ -26,6 +26,25 @@ abstract final class Formatters {
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
   }
 
+  /// Converts any accepted Nigerian phone format to E.164 (+234XXXXXXXXXX).
+  /// Input: 08066134387 | 8066134387 | +2348066134387 | 2348066134387
+  static String toE164(String value) {
+    final c = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    if (c.startsWith('+234')) return c;
+    if (c.startsWith('234')) return '+$c';
+    if (c.startsWith('0')) return '+234${c.substring(1)}';
+    return '+234$c';
+  }
+
+  /// Strips the +234 prefix for pre-filling the phone field (field already shows +234 visually).
+  static String phoneForDisplay(String stored) {
+    final c = stored.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    if (c.startsWith('+234')) return c.substring(4);
+    if (c.startsWith('234')) return c.substring(3);
+    if (c.startsWith('0')) return c.substring(1);
+    return c;
+  }
+
   static String phone(String raw) {
     final c = raw.replaceAll(RegExp(r'[^\d+]'), '');
     if (c.startsWith('+234') && c.length == 14) {

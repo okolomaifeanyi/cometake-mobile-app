@@ -2,6 +2,7 @@ import '../../../../core/errors/app_exception.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/repositories/orders_repository.dart';
 import '../datasources/supabase_orders_datasource.dart';
+import '../models/order_model.dart';
 
 class OrdersRepositoryImpl implements OrdersRepository {
   final SupabaseOrdersDatasource _datasource;

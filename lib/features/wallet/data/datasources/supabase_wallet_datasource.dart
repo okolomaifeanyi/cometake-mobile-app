@@ -1,17 +1,14 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 
 import '../../../../core/errors/app_exception.dart';
-import '../../../../core/network/dio_client.dart';
 import '../../../../core/supabase/supabase_module.dart';
 import '../models/wallet_model.dart';
 
 class SupabaseWalletDatasource {
   final SupabaseClient _client;
-  final Dio _dio;
 
-  const SupabaseWalletDatasource(this._client, this._dio);
+  const SupabaseWalletDatasource(this._client);
 
   Future<WalletModel> fetchWallet() async {
     try {
@@ -25,7 +22,6 @@ class SupabaseWalletDatasource {
           .maybeSingle();
 
       if (data == null) {
-        // Return zero-balance placeholder; wallet is created server-side on first topup
         return WalletModel(
           id: '',
           balance: 0,
@@ -45,7 +41,8 @@ class SupabaseWalletDatasource {
       final rows = await _client
           .from('core_wallettransaction')
           .select(
-              'id, wallet_id, transaction_type, amount, balance_before, balance_after, description, reference, created_at')
+            'id, wallet_id, transaction_type, amount, balance_before, balance_after, description, reference, created_at',
+          )
           .eq('wallet_id', walletId)
           .order('created_at', ascending: false)
           .limit(50);
@@ -59,16 +56,46 @@ class SupabaseWalletDatasource {
     }
   }
 
+  /// Initialize a Paystack top-up via Supabase Edge Function.
+  /// Returns [TopupResultModel] with authorization_url + reference.
   Future<TopupResultModel> initiateTopup(double amount) async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
-        '/api/v1/wallet/topup',
-        data: {'amount': amount},
+      final response = await _client.functions.invoke(
+        'paystack-topup',
+        body: {'amount': amount},
       );
-      return TopupResultModel.fromJson(response.data!);
-    } on DioException catch (e) {
-      final msg = e.response?.data?['error'] ?? 'Top-up failed';
-      throw ServerException(msg.toString(), statusCode: e.response?.statusCode);
+
+      if (response.status != 200) {
+        final err = (response.data as Map<String, dynamic>?)?['error'] ?? 'Top-up failed';
+        throw ServerException(err.toString(), statusCode: response.status);
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      return TopupResultModel.fromJson(data);
+    } on FunctionException catch (e) {
+      final msg = (e.details as Map<String, dynamic>?)?['error'] ?? e.reasonPhrase ?? 'Top-up failed';
+      throw ServerException(msg.toString());
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException(e.toString());
+    }
+  }
+
+  /// Verify a Paystack payment and credit the wallet via Supabase Edge Function.
+  Future<void> verifyTopup(String reference) async {
+    try {
+      final response = await _client.functions.invoke(
+        'paystack-verify',
+        body: {'reference': reference},
+      );
+
+      if (response.status != 200) {
+        final err = (response.data as Map<String, dynamic>?)?['error'] ?? 'Verification failed';
+        throw ServerException(err.toString(), statusCode: response.status);
+      }
+    } on FunctionException catch (e) {
+      final msg = (e.details as Map<String, dynamic>?)?['error'] ?? e.reasonPhrase ?? 'Verification failed';
+      throw ServerException(msg.toString());
     } catch (e) {
       if (e is AppException) rethrow;
       throw ServerException(e.toString());
@@ -77,8 +104,5 @@ class SupabaseWalletDatasource {
 }
 
 final walletDatasourceProvider = Provider<SupabaseWalletDatasource>((ref) {
-  return SupabaseWalletDatasource(
-    ref.watch(supabaseClientProvider),
-    ref.watch(dioProvider),
-  );
+  return SupabaseWalletDatasource(ref.watch(supabaseClientProvider));
 });

@@ -25,7 +25,7 @@ final cartRepositoryProvider = Provider<CartRepository>(
 
 final cartNotifierProvider =
     AsyncNotifierProvider<CartNotifier, Cart>(CartNotifier.new,
-        name: 'cartNotifierProvider');
+        name: 'cartNotifierProvider',);
 
 // Convenient count badge
 final cartItemCountProvider = Provider<int>((ref) {

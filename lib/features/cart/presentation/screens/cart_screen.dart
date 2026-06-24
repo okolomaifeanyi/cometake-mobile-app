@@ -82,10 +82,10 @@ class CartScreen extends ConsumerWidget {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+              child: const Text('Cancel'),),
           TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Clear')),
+              child: const Text('Clear'),),
         ],
       ),
     );
@@ -97,11 +97,25 @@ class CartScreen extends ConsumerWidget {
 
 // ─── Cart summary bar ─────────────────────────────────────────────────────────
 
-class _CartSummary extends StatelessWidget {
+class _CartSummary extends StatefulWidget {
   final double subtotal;
   final int itemCount;
 
   const _CartSummary({required this.subtotal, required this.itemCount});
+
+  @override
+  State<_CartSummary> createState() => _CartSummaryState();
+}
+
+class _CartSummaryState extends State<_CartSummary> {
+  bool _navigating = false;
+
+  Future<void> _goCheckout() async {
+    if (_navigating) return;
+    setState(() => _navigating = true);
+    await context.push('/checkout');
+    if (mounted) setState(() => _navigating = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,11 +143,11 @@ class _CartSummary extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Subtotal ($itemCount ${itemCount == 1 ? 'item' : 'items'})',
+                'Subtotal (${widget.itemCount} ${widget.itemCount == 1 ? 'item' : 'items'})',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               Text(
-                Formatters.currency(subtotal),
+                Formatters.currency(widget.subtotal),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w800,
@@ -144,7 +158,7 @@ class _CartSummary extends StatelessWidget {
           const SizedBox(height: AppDimensions.spacingMd),
           AppButton(
             label: 'Proceed to Checkout',
-            onPressed: () => context.push('/checkout'),
+            onPressed: _navigating ? null : _goCheckout,
             icon: const Icon(Icons.arrow_forward),
           ),
         ],
@@ -170,7 +184,7 @@ class _EmptyCartView extends StatelessWidget {
             ),
             const SizedBox(height: AppDimensions.spacingMd),
             Text('Your cart is empty',
-                style: Theme.of(context).textTheme.titleMedium),
+                style: Theme.of(context).textTheme.titleMedium,),
             const SizedBox(height: AppDimensions.spacingXs),
             Text(
               'Add some products to get started',

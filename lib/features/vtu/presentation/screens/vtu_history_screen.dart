@@ -32,10 +32,10 @@ class VtuHistoryScreen extends ConsumerWidget {
                 children: [
                   Icon(Icons.receipt_long_outlined,
                       size: 64,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,),
                   const SizedBox(height: AppDimensions.spacingMd),
                   Text('No transactions yet',
-                      style: Theme.of(context).textTheme.titleMedium),
+                      style: Theme.of(context).textTheme.titleMedium,),
                 ],
               ),
             );
@@ -45,7 +45,7 @@ class VtuHistoryScreen extends ConsumerWidget {
             child: ListView.separated(
               itemCount: txs.length,
               separatorBuilder: (_, __) => const Divider(
-                  height: 1, indent: AppDimensions.screenPaddingH),
+                  height: 1, indent: AppDimensions.screenPaddingH,),
               itemBuilder: (_, i) => _VtuHistoryTile(transaction: txs[i]),
             ),
           );
@@ -84,7 +84,7 @@ class _VtuHistoryTile extends StatelessWidget {
                   BorderRadius.circular(AppDimensions.radiusFull),
             ),
             child: const Icon(Icons.bolt_outlined,
-                color: AppColors.primary, size: 20),
+                color: AppColors.primary, size: 20,),
           ),
           const SizedBox(width: AppDimensions.spacingMd),
           Expanded(
@@ -131,7 +131,7 @@ class _VtuHistoryTile extends StatelessWidget {
                   style: TextStyle(
                       color: statusColor,
                       fontSize: 9,
-                      fontWeight: FontWeight.w600),
+                      fontWeight: FontWeight.w600,),
                 ),
               ),
             ],

@@ -92,7 +92,7 @@ class ShimmerCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          ShimmerBox(
+          const ShimmerBox(
             width: AppDimensions.productCardImageHeight,
             height: AppDimensions.productCardImageHeight,
             radius: AppDimensions.radiusMd,

@@ -19,6 +19,7 @@ class TopupScreen extends ConsumerStatefulWidget {
 class _TopupScreenState extends ConsumerState<TopupScreen> {
   final _ctrl = TextEditingController();
   bool _launched = false;
+  String? _pendingReference;
 
   static const _presets = [500, 1000, 2000, 5000, 10000];
 
@@ -46,11 +47,18 @@ class _TopupScreenState extends ConsumerState<TopupScreen> {
 
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (ok && mounted) {
-      setState(() => _launched = true);
+      setState(() {
+        _launched = true;
+        _pendingReference = result.reference;
+      });
     }
   }
 
   Future<void> _refresh() async {
+    // Verify payment with Paystack first (credits wallet server-side)
+    if (_pendingReference != null) {
+      await ref.read(topupNotifierProvider.notifier).verify(_pendingReference!);
+    }
     await ref.read(walletNotifierProvider.notifier).refresh();
     await ref.read(walletTransactionsProvider.notifier).refresh();
     if (mounted) {
@@ -87,7 +95,7 @@ class _TopupScreenState extends ConsumerState<TopupScreen> {
             TextFormField(
               controller: _ctrl,
               keyboardType:
-                  const TextInputType.numberWithOptions(decimal: false),
+                  const TextInputType.numberWithOptions(),
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               decoration: InputDecoration(
                 prefixText: '₦  ',
@@ -139,12 +147,12 @@ class _TopupScreenState extends ConsumerState<TopupScreen> {
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusMd),
                   border: Border.all(
-                      color: AppColors.success.withOpacity(0.3)),
+                      color: AppColors.success.withOpacity(0.3),),
                 ),
                 child: Column(
                   children: [
                     const Icon(Icons.open_in_browser,
-                        color: AppColors.success, size: 32),
+                        color: AppColors.success, size: 32,),
                     const SizedBox(height: AppDimensions.spacingSm),
                     Text(
                       'Payment page opened in your browser.',
@@ -164,7 +172,7 @@ class _TopupScreenState extends ConsumerState<TopupScreen> {
                           ?.copyWith(
                               color: Theme.of(context)
                                   .colorScheme
-                                  .onSurfaceVariant),
+                                  .onSurfaceVariant,),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -192,7 +200,7 @@ class _TopupScreenState extends ConsumerState<TopupScreen> {
                 child: Text(
                   topupAsync.error.toString(),
                   style: TextStyle(
-                      color: Theme.of(context).colorScheme.error),
+                      color: Theme.of(context).colorScheme.error,),
                 ),
               ),
           ],

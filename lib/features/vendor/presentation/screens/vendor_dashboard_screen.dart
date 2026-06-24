@@ -12,9 +12,28 @@ import '../../../../shared/widgets/app_error_widget.dart';
 import '../../../../shared/widgets/app_loading.dart';
 import '../../../products/domain/entities/product.dart';
 import '../providers/vendor_provider.dart';
+import 'become_seller_screen.dart';
 
 class VendorDashboardScreen extends ConsumerWidget {
   const VendorDashboardScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final subscriptionAsync = ref.watch(myVendorSubscriptionProvider);
+
+    return subscriptionAsync.when(
+      loading: () => const Scaffold(body: AppLoadingOverlay()),
+      error: (_, __) => const _Dashboard(),
+      data: (sub) {
+        if (sub == null || !sub.isActive) return const BecomeSellerScreen();
+        return const _Dashboard();
+      },
+    );
+  }
+}
+
+class _Dashboard extends ConsumerWidget {
+  const _Dashboard();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -88,7 +107,7 @@ class _ProductTile extends ConsumerWidget {
               : Container(
                   color: AppColors.primary.withOpacity(0.08),
                   child: const Icon(Icons.image_outlined,
-                      color: AppColors.primary, size: 24),
+                      color: AppColors.primary, size: 24,),
                 ),
         ),
       ),
@@ -108,10 +127,10 @@ class _ProductTile extends ConsumerWidget {
           ),
           const SizedBox(width: AppDimensions.spacingXs),
           _StatusChip(label: isListed ? 'Listed' : 'Unlisted',
-              color: isListed ? AppColors.success : AppColors.warning),
+              color: isListed ? AppColors.success : AppColors.warning,),
           const SizedBox(width: AppDimensions.spacingXs),
           if (!product.inStock)
-            _StatusChip(label: 'Out of stock', color: AppColors.error),
+            const _StatusChip(label: 'Out of stock', color: AppColors.error),
         ],
       ),
       trailing: PopupMenuButton<String>(
@@ -127,10 +146,10 @@ class _ProductTile extends ConsumerWidget {
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel')),
+                      child: const Text('Cancel'),),
                   TextButton(
                       onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Delete')),
+                      child: const Text('Delete'),),
                 ],
               ),
             );
@@ -164,7 +183,7 @@ class _StatusChip extends StatelessWidget {
         ),
         child: Text(label,
             style: TextStyle(
-                color: color, fontSize: 9, fontWeight: FontWeight.w600)),
+                color: color, fontSize: 9, fontWeight: FontWeight.w600,),),
       );
 }
 
@@ -178,10 +197,10 @@ class _EmptyProducts extends StatelessWidget {
           children: [
             Icon(Icons.inventory_2_outlined,
                 size: 64,
-                color: Theme.of(context).colorScheme.onSurfaceVariant),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,),
             const SizedBox(height: AppDimensions.spacingMd),
             Text('No products yet',
-                style: Theme.of(context).textTheme.titleMedium),
+                style: Theme.of(context).textTheme.titleMedium,),
             const SizedBox(height: AppDimensions.spacingXs),
             Text(
               'Tap + to add your first product',

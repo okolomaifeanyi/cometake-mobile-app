@@ -187,7 +187,7 @@ class _MessageInput extends StatelessWidget {
                 hintText: 'Type a message…',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(
-                      AppDimensions.radiusFull),
+                      AppDimensions.radiusFull,),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,

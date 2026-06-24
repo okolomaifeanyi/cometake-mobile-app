@@ -12,16 +12,16 @@ abstract final class ErrorHandler {
     if (kDebugMode) _log.e('Error caught', error: error, stackTrace: stackTrace);
 
     return switch (error) {
-      AuthException e => Failure.auth(message: e.message),
-      UnauthorizedException e => Failure.unauthorized(message: e.message),
-      NetworkException e => Failure.network(message: e.message),
-      ServerException e =>
+      final AuthException e => Failure.auth(message: e.message),
+      final UnauthorizedException e => Failure.unauthorized(message: e.message),
+      final NetworkException e => Failure.network(message: e.message),
+      final ServerException e =>
         Failure.server(message: e.message, statusCode: e.statusCode),
       NotFoundException _ => const Failure.notFound(),
-      ValidationException e => Failure.validation(message: e.message),
-      UploadException e => Failure.upload(message: e.message),
+      final ValidationException e => Failure.validation(message: e.message),
+      final UploadException e => Failure.upload(message: e.message),
       CacheException _ => const Failure.unknown(),
-      DioException e => _fromDio(e),
+      final DioException e => _fromDio(e),
       _ => const Failure.unknown(),
     };
   }
@@ -47,7 +47,7 @@ abstract final class ErrorHandler {
 
     return switch (statusCode) {
       401 => const Failure.unauthorized(),
-      403 => Failure.auth(message: 'Access denied'),
+      403 => const Failure.auth(message: 'Access denied'),
       404 => const Failure.notFound(),
       422 => Failure.validation(message: message),
       _ => Failure.server(message: message, statusCode: statusCode),

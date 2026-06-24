@@ -134,7 +134,7 @@ class _VendorProductFormScreenState
 
     return Scaffold(
       appBar: AppBar(
-          title: Text(_isEdit ? 'Edit Product' : 'Add Product')),
+          title: Text(_isEdit ? 'Edit Product' : 'Add Product'),),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -157,14 +157,14 @@ class _VendorProductFormScreenState
                     border: Border.all(
                         color: Theme.of(context)
                             .colorScheme
-                            .outlineVariant),
+                            .outlineVariant,),
                   ),
                   child: _pickedImage != null
                       ? ClipRRect(
                           borderRadius:
                               BorderRadius.circular(AppDimensions.radiusMd),
                           child: Image.file(_pickedImage!,
-                              fit: BoxFit.cover),
+                              fit: BoxFit.cover,),
                         )
                       : Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -173,9 +173,9 @@ class _VendorProductFormScreenState
                                 size: 40,
                                 color: Theme.of(context)
                                     .colorScheme
-                                    .onSurfaceVariant),
+                                    .onSurfaceVariant,),
                             const SizedBox(
-                                height: AppDimensions.spacingSm),
+                                height: AppDimensions.spacingSm,),
                             Text(
                               _isEdit
                                   ? 'Tap to change image'
@@ -186,7 +186,7 @@ class _VendorProductFormScreenState
                                   ?.copyWith(
                                       color: Theme.of(context)
                                           .colorScheme
-                                          .onSurfaceVariant),
+                                          .onSurfaceVariant,),
                             ),
                           ],
                         ),
@@ -202,7 +202,7 @@ class _VendorProductFormScreenState
                   labelText: 'Product Name',
                   border: OutlineInputBorder(
                       borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusMd)),
+                          BorderRadius.circular(AppDimensions.radiusMd),),
                 ),
                 validator: (v) => Validators.required(v, label: 'Name'),
                 textInputAction: TextInputAction.next,
@@ -216,7 +216,7 @@ class _VendorProductFormScreenState
                   labelText: 'Description',
                   border: OutlineInputBorder(
                       borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusMd)),
+                          BorderRadius.circular(AppDimensions.radiusMd),),
                 ),
                 minLines: 3,
                 maxLines: 6,
@@ -234,18 +234,19 @@ class _VendorProductFormScreenState
                         labelText: 'Price (₦)',
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(
-                                AppDimensions.radiusMd)),
+                                AppDimensions.radiusMd,),),
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
+                          decimal: true,),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(
-                            RegExp(r'[0-9.]'))
+                            RegExp(r'[0-9.]'),),
                       ],
                       validator: (v) {
                         final n = double.tryParse(v ?? '');
-                        if (n == null || n <= 0)
+                        if (n == null || n <= 0) {
                           return 'Enter a valid price';
+                        }
                         return null;
                       },
                       textInputAction: TextInputAction.next,
@@ -259,13 +260,13 @@ class _VendorProductFormScreenState
                         labelText: 'Compare Price (₦)',
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(
-                                AppDimensions.radiusMd)),
+                                AppDimensions.radiusMd,),),
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
+                          decimal: true,),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(
-                            RegExp(r'[0-9.]'))
+                            RegExp(r'[0-9.]'),),
                       ],
                       textInputAction: TextInputAction.next,
                     ),
@@ -281,7 +282,7 @@ class _VendorProductFormScreenState
                   labelText: 'Quantity in Stock',
                   border: OutlineInputBorder(
                       borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusMd)),
+                          BorderRadius.circular(AppDimensions.radiusMd),),
                 ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -295,7 +296,7 @@ class _VendorProductFormScreenState
                     height: 56,
                     child: Center(
                         child:
-                            CircularProgressIndicator(strokeWidth: 2))),
+                            CircularProgressIndicator(strokeWidth: 2),),),
                 error: (_, __) => const SizedBox.shrink(),
                 data: (categories) => DropdownButtonFormField<String>(
                   value: _selectedCategoryId,
@@ -303,13 +304,13 @@ class _VendorProductFormScreenState
                     labelText: 'Category',
                     border: OutlineInputBorder(
                         borderRadius:
-                            BorderRadius.circular(AppDimensions.radiusMd)),
+                            BorderRadius.circular(AppDimensions.radiusMd),),
                   ),
                   items: categories
                       .map((c) => DropdownMenuItem(
                             value: c.id,
                             child: Text(c.name),
-                          ))
+                          ),)
                       .toList(),
                   onChanged: (v) =>
                       setState(() => _selectedCategoryId = v),
@@ -333,11 +334,11 @@ class _VendorProductFormScreenState
               if (mutationState.error != null)
                 Padding(
                   padding: const EdgeInsets.only(
-                      bottom: AppDimensions.spacingMd),
+                      bottom: AppDimensions.spacingMd,),
                   child: Text(
                     mutationState.error!,
                     style: TextStyle(
-                        color: Theme.of(context).colorScheme.error),
+                        color: Theme.of(context).colorScheme.error,),
                   ),
                 ),
 

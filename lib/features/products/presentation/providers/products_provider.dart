@@ -56,7 +56,6 @@ class ProductsNotifier extends AsyncNotifier<ProductsState> {
   Future<ProductsState> _fetch(ProductsState filters) async {
     final result = await ref.read(productsRepositoryProvider).getProducts(
           page: filters.page,
-          limit: _limit,
           search: filters.search,
           categoryId: filters.categoryId,
           sort: filters.sort,
@@ -77,7 +76,6 @@ class ProductsNotifier extends AsyncNotifier<ProductsState> {
       final nextPage = current.page + 1;
       final result = await ref.read(productsRepositoryProvider).getProducts(
             page: nextPage,
-            limit: _limit,
             search: current.search,
             categoryId: current.categoryId,
             sort: current.sort,
@@ -87,7 +85,7 @@ class ProductsNotifier extends AsyncNotifier<ProductsState> {
         hasMore: result.hasMore,
         page: nextPage,
         isLoadingMore: false,
-      ));
+      ),);
     } on AppException catch (e) {
       state = AsyncData(current.copyWith(isLoadingMore: false));
       // Surface error without discarding list
@@ -117,7 +115,7 @@ class ProductsNotifier extends AsyncNotifier<ProductsState> {
         products: [],
         search: newSearch,
         isLoadingMore: false,
-      )),
+      ),),
     );
   }
 
@@ -131,7 +129,7 @@ class ProductsNotifier extends AsyncNotifier<ProductsState> {
         products: [],
         categoryId: categoryId,
         isLoadingMore: false,
-      )),
+      ),),
     );
   }
 
@@ -145,7 +143,7 @@ class ProductsNotifier extends AsyncNotifier<ProductsState> {
         products: [],
         sort: sort,
         isLoadingMore: false,
-      )),
+      ),),
     );
   }
 }
@@ -170,4 +168,4 @@ class ProductDetailNotifier
 final categoriesProvider =
     FutureProvider.autoDispose<List<ProductCategory>>((ref) {
   return ref.watch(productsRepositoryProvider).getCategories();
-}, name: 'categoriesProvider');
+}, name: 'categoriesProvider',);

@@ -9,6 +9,7 @@ import '../../../../core/errors/app_exception.dart';
 import '../../../../core/services/cloudinary_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
@@ -47,7 +48,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final user = ref.read(authNotifierProvider).valueOrNull;
     if (user == null) return;
     _nameCtrl.text = user.fullName;
-    _phoneCtrl.text = user.phone ?? '';
+    _phoneCtrl.text = user.phone != null ? Formatters.phoneForDisplay(user.phone!) : '';
   }
 
   Future<void> _pickImage() async {
@@ -83,7 +84,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: context.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -126,7 +127,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
       // Update name/phone
       final newName = _nameCtrl.text.trim();
-      final newPhone = _phoneCtrl.text.trim();
+      final rawPhone = _phoneCtrl.text.trim();
+      final newPhone = rawPhone.isEmpty ? '' : Formatters.toE164(rawPhone);
       final nameChanged = newName != user.fullName;
       final phoneChanged = newPhone != (user.phone ?? '');
 
@@ -135,7 +137,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ref,
           userId: user.id,
           fullName: nameChanged ? newName : null,
-          phone: phoneChanged ? newPhone : null,
+          phone: phoneChanged ? (newPhone.isEmpty ? null : newPhone) : null,
         );
       }
 
@@ -340,7 +342,7 @@ class _AvatarPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = AppDimensions.avatarXl;
+    const size = AppDimensions.avatarXl;
 
     Widget imageWidget;
 

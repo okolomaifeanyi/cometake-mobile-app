@@ -19,7 +19,9 @@ class SupabaseProfileDatasource implements ProfileDatasource {
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       };
       if (fullName != null && fullName.isNotEmpty) {
-        updates['full_name'] = fullName;
+        final parts = fullName.trim().split(RegExp(r'\s+'));
+        updates['first_name'] = parts.first;
+        updates['last_name'] = parts.length > 1 ? parts.skip(1).join(' ') : '';
       }
       if (phone != null) {
         updates['phone'] = phone.isEmpty ? null : phone;
@@ -32,9 +34,9 @@ class SupabaseProfileDatasource implements ProfileDatasource {
           .select()
           .single();
 
-      return AuthUserModel.fromJson(result as Map<String, dynamic>);
+      return authUserModelFromRow(Map<String, dynamic>.from(result as Map));
     } catch (e) {
-      throw ServerException('Failed to update profile. Please try again.');
+      throw const ServerException('Failed to update profile. Please try again.');
     }
   }
 
@@ -47,16 +49,16 @@ class SupabaseProfileDatasource implements ProfileDatasource {
       final result = await _client
           .from('core_user')
           .update({
-            'avatar_url': avatarUrl,
+            'photo': avatarUrl,
             'updated_at': DateTime.now().toUtc().toIso8601String(),
           })
           .eq('id', userId)
           .select()
           .single();
 
-      return AuthUserModel.fromJson(result as Map<String, dynamic>);
+      return authUserModelFromRow(Map<String, dynamic>.from(result as Map));
     } catch (e) {
-      throw ServerException('Failed to update avatar. Please try again.');
+      throw const ServerException('Failed to update avatar. Please try again.');
     }
   }
 }

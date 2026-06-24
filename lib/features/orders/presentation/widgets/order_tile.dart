@@ -43,7 +43,7 @@ class OrderTile extends StatelessWidget {
                   Text(
                     Formatters.orderId(order.id),
                     style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700),
+                        fontWeight: FontWeight.w700,),
                   ),
                   const SizedBox(height: 2),
                   Text(

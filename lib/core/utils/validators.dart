@@ -22,9 +22,10 @@ abstract final class Validators {
 
   static String? phone(String? value) {
     if (value == null || value.isEmpty) return 'Phone number is required';
-    final cleaned = value.replaceAll(RegExp(r'[\s\-]'), '');
-    if (!RegExp(r'^(\+?234|0)[789]\d{9}$').hasMatch(cleaned)) {
-      return 'Enter a valid Nigerian phone number (e.g. 08012345678)';
+    final cleaned = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    // Accepts: 08012345678 | 8012345678 | +2348012345678 | 2348012345678
+    if (!RegExp(r'^(\+?234|0)?[789]\d{9}$').hasMatch(cleaned)) {
+      return 'Enter a valid phone number (e.g. 8012345678)';
     }
     return null;
   }

@@ -23,6 +23,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  bool _isGoogleLoading = false;
 
   @override
   void dispose() {
@@ -38,6 +39,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           email: _emailCtrl.text.trim(),
           password: _passwordCtrl.text,
         );
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() => _isGoogleLoading = true);
+    try {
+      await ref.read(authNotifierProvider.notifier).signInWithGoogle();
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
+    }
   }
 
   @override
@@ -88,7 +98,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       borderRadius:
                           BorderRadius.circular(AppDimensions.radiusLg),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.shopping_bag_outlined,
                       size: 36,
                       color: AppColors.primary,
@@ -125,7 +135,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 AuthPasswordField(
                   controller: _passwordCtrl,
                   validator: Validators.password,
-                  textInputAction: TextInputAction.done,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                 ),
                 const SizedBox(height: AppDimensions.spacingXs),
@@ -171,6 +180,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 const SizedBox(height: AppDimensions.spacingXl),
 
+                // ─── Google Sign-In ───────────────────────────────────────
+                OutlinedButton(
+                  onPressed: (isLoading || _isGoogleLoading)
+                      ? null
+                      : _signInWithGoogle,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    side: BorderSide(color: colorScheme.outline),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusMd),
+                    ),
+                  ),
+                  child: _isGoogleLoading
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: colorScheme.primary,
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _GoogleIcon(),
+                            const SizedBox(width: 12),
+                            const Text('Continue with Google'),
+                          ],
+                        ),
+                ),
+
+                const SizedBox(height: AppDimensions.spacingMd),
+
                 // ─── Register ─────────────────────────────────────────────
                 AppButton.outlined(
                   label: 'Create an account',
@@ -180,6 +223,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: AppDimensions.spacingXxl),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GoogleIcon extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 20,
+      height: 20,
+      decoration: const BoxDecoration(
+        color: Color(0xFF4285F4),
+        shape: BoxShape.circle,
+      ),
+      child: const Center(
+        child: Text(
+          'G',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            height: 1,
           ),
         ),
       ),

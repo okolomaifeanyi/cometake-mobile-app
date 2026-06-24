@@ -89,7 +89,9 @@ final appRouterProvider = Provider<GoRouter>(
             ),
             GoRoute(
               path: AppRoutes.products,
-              builder: (_, __) => const ProductsScreen(),
+              builder: (_, state) => ProductsScreen(
+                initialCategory: state.uri.queryParameters['category'],
+              ),
               routes: [
                 GoRoute(
                   path: AppRoutes.productDetail,

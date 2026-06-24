@@ -23,6 +23,37 @@ class AuthUserModel with _$AuthUserModel {
       _$AuthUserModelFromJson(json);
 }
 
+/// Maps a raw `core_user` Postgres row to [AuthUserModel].
+/// The DB stores first_name/last_name/photo/verified_email rather than
+/// the json_serializable field names used by this model.
+AuthUserModel authUserModelFromRow(Map<String, dynamic> row) {
+  final firstName = row['first_name'] as String? ?? '';
+  final lastName = row['last_name'] as String? ?? '';
+  final fullName = [firstName, lastName]
+      .where((s) => s.isNotEmpty)
+      .join(' ');
+
+  String role = 'customer';
+  if (row['is_superuser'] == true || row['is_staff'] == true) {
+    role = 'admin';
+  } else if (row['is_seller'] == true) {
+    role = 'seller';
+  }
+
+  return AuthUserModel(
+    id: row['id'] as String,
+    email: row['email'] as String? ?? '',
+    fullName: fullName,
+    phone: row['phone'] as String?,
+    avatarUrl: row['photo'] as String?,
+    role: role,
+    isVerified: row['verified_email'] as bool? ?? false,
+    createdAt: row['created_at'] != null
+        ? DateTime.tryParse(row['created_at'].toString())
+        : null,
+  );
+}
+
 extension AuthUserModelX on AuthUserModel {
   AuthUser toEntity() => AuthUser(
         id: id,

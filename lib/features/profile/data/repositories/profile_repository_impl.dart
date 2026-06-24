@@ -1,3 +1,4 @@
+import '../../../auth/data/models/auth_user_model.dart';
 import '../../../auth/domain/entities/auth_user.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../datasources/profile_datasource.dart';

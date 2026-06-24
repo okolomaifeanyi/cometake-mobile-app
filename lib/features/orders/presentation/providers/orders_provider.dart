@@ -31,7 +31,7 @@ class OrdersNotifier extends AsyncNotifier<List<Order>> {
   Future<void> refresh() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-        () => ref.read(ordersRepositoryProvider).getMyOrders());
+        () => ref.read(ordersRepositoryProvider).getMyOrders(),);
   }
 }
 
@@ -80,8 +80,8 @@ class AddressesNotifier extends AsyncNotifier<List<Address>> {
             state: state,
             isDefault: isDefault,
           );
-      final current = state.valueOrNull ?? [];
-      state = AsyncData([if (isDefault) ...current.map((a) => a.copyWith(isDefault: false)) else ...current, address]);
+      final current = this.state.valueOrNull ?? [];
+      this.state = AsyncData([if (isDefault) ...current.map((a) => a.copyWith(isDefault: false)) else ...current, address]);
       return address;
     } on AppException {
       return null;
@@ -119,7 +119,7 @@ class CheckoutNotifier extends AsyncNotifier<Order?> {
     } catch (e) {
       state = AsyncError(
         ErrorHandler.handle(
-            const ServerException('Failed to place order.')),
+            const ServerException('Failed to place order.'),),
         StackTrace.current,
       );
       return null;

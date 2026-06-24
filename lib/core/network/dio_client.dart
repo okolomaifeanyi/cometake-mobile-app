@@ -34,7 +34,7 @@ abstract final class DioClient {
 
     dio.interceptors.addAll([
       AuthInterceptor(supabaseClient),
-      RetryInterceptor(dio, maxRetries: AppConstants.maxRetries),
+      RetryInterceptor(dio),
       if (kDebugMode)
         LogInterceptor(
           requestBody: true,
