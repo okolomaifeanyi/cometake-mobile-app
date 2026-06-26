@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/datasources/supabase_wallet_datasource.dart';
 import '../../data/models/wallet_model.dart';
 import '../../domain/entities/wallet.dart';
+import '../../domain/entities/wallet_verify_result.dart';
 
 // ─── Wallet notifier ──────────────────────────────────────────────────────────
 
@@ -65,14 +66,27 @@ class TopupNotifier extends AutoDisposeAsyncNotifier<TopupResult?> {
     }
   }
 
-  Future<bool> verify(String reference) async {
-    try {
-      final ds = ref.read(walletDatasourceProvider);
-      await ds.verifyTopup(reference);
-      return true;
-    } catch (_) {
-      return false;
+  /// Verify the payment, retrying on [VerifyPending] up to [maxAttempts] times.
+  /// The delay between retries is read from the backend response (`retryAfterSeconds`)
+  /// so we never hardcode a sleep here.
+  Future<WalletVerifyResult> verify(
+    String reference, {
+    int maxAttempts = 3,
+  }) async {
+    final ds = ref.read(walletDatasourceProvider);
+    WalletVerifyResult last = const VerifyFailed('Verification timed out');
+
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      last = await ds.verifyTopupStatus(reference);
+      if (last is! VerifyPending) return last;
+      if (attempt < maxAttempts - 1) {
+        await Future<void>.delayed(
+          Duration(seconds: last.retryAfterSeconds),
+        );
+      }
     }
+
+    return last;
   }
 }
 

@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../domain/entities/wallet_verify_result.dart';
 import '../providers/wallet_provider.dart';
 
 class TopupScreen extends ConsumerStatefulWidget {
@@ -19,6 +20,7 @@ class TopupScreen extends ConsumerStatefulWidget {
 class _TopupScreenState extends ConsumerState<TopupScreen> {
   final _ctrl = TextEditingController();
   bool _launched = false;
+  bool _verifying = false;
   String? _pendingReference;
 
   static const _presets = [500, 1000, 2000, 5000, 10000];
@@ -55,26 +57,90 @@ class _TopupScreenState extends ConsumerState<TopupScreen> {
   }
 
   Future<void> _refresh() async {
-    // Verify payment with Paystack first (credits wallet server-side)
-    if (_pendingReference != null) {
-      await ref.read(topupNotifierProvider.notifier).verify(_pendingReference!);
-    }
-    await ref.read(walletNotifierProvider.notifier).refresh();
-    await ref.read(walletTransactionsProvider.notifier).refresh();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Wallet refreshed'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    final ref_ = _pendingReference;
+    if (ref_ != null) {
+      setState(() => _verifying = true);
+      try {
+        final result =
+            await ref.read(topupNotifierProvider.notifier).verify(ref_);
+        if (!mounted) return;
+
+        switch (result) {
+          case VerifySuccess(:final message):
+            await ref.read(walletNotifierProvider.notifier).refresh();
+            await ref.read(walletTransactionsProvider.notifier).refresh();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(message),
+                  backgroundColor: AppColors.success,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+              setState(() => _launched = false);
+            }
+
+          case VerifyPending():
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Payment still processing — please try again in a moment.'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+
+          case VerifyFailed(:final message):
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(message),
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+
+          case VerifyError(:final isUnauthorized, :final isNetwork, :final message):
+            if (!mounted) return;
+            if (isUnauthorized) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Session expired — please log in again.'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(isNetwork ? 'No internet connection.' : message),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+        }
+      } finally {
+        if (mounted) setState(() => _verifying = false);
+      }
+    } else {
+      // No pending reference — just refresh balances
+      await ref.read(walletNotifierProvider.notifier).refresh();
+      await ref.read(walletTransactionsProvider.notifier).refresh();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Wallet refreshed'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final topupAsync = ref.watch(topupNotifierProvider);
-    final isLoading = topupAsync.isLoading;
+    final isLoading = topupAsync.isLoading || _verifying;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Top Up Wallet')),
@@ -143,11 +209,11 @@ class _TopupScreenState extends ConsumerState<TopupScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppDimensions.spacingMd),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.08),
+                  color: AppColors.success.withValues(alpha:0.08),
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusMd),
                   border: Border.all(
-                      color: AppColors.success.withOpacity(0.3),),
+                      color: AppColors.success.withValues(alpha:0.3),),
                 ),
                 child: Column(
                   children: [
@@ -180,14 +246,15 @@ class _TopupScreenState extends ConsumerState<TopupScreen> {
               ),
               const SizedBox(height: AppDimensions.spacingMd),
               AppButton(
-                label: 'Refresh Wallet Balance',
-                onPressed: _refresh,
+                label: _verifying ? 'Verifying…' : 'Refresh Wallet Balance',
+                onPressed: !isLoading ? _refresh : null,
+                isLoading: isLoading,
                 icon: const Icon(Icons.refresh),
               ),
               const SizedBox(height: AppDimensions.spacingSm),
               Center(
                 child: TextButton(
-                  onPressed: () => setState(() => _launched = false),
+                  onPressed: isLoading ? null : () => setState(() => _launched = false),
                   child: const Text('Pay a different amount'),
                 ),
               ),
