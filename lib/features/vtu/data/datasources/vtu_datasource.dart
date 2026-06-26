@@ -99,6 +99,31 @@ class VtuDatasource {
     }
   }
 
+  Future<Map<String, dynamic>> verifyPayment(String reference) async {
+    try {
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/api/v1/payments/verify',
+        data: {'reference': reference},
+      );
+      return res.data ?? {};
+    } on DioException catch (e) {
+      final msg = e.response?.data?['error']?.toString() ?? 'Payment verification failed';
+      throw ServerException(msg, statusCode: e.response?.statusCode);
+    }
+  }
+
+  Future<String?> checkTransactionStatus(String reference) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return null;
+    final row = await _client
+        .from('vtu_transactions')
+        .select('status')
+        .eq('reference', reference)
+        .eq('user_id', userId)
+        .maybeSingle();
+    return row?['status'] as String?;
+  }
+
   Future<List<VtuTransactionModel>> fetchHistory() async {
     try {
       final userId = _client.auth.currentUser?.id;

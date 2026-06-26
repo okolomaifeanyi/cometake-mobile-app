@@ -42,6 +42,9 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
   bool _loading = true;
   bool _externalLaunched = false;
   bool _autoVerifyScheduled = false;
+  // Guards all pop paths — prevents double-pop if the manual button, the
+  // 1.5s auto-verify timer, and the callback URL intercept race each other.
+  bool _popFired = false;
 
   static const _callbackHosts = ['cometake.net'];
   static const _callbackPaths = ['/vtu/verify', '/checkout/verify'];
@@ -83,11 +86,15 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
     setState(() => _autoVerifyScheduled = true);
 
     Future<void>.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        debugPrint('[Paystack] Auto-verify firing | ref=${widget.reference}');
-        Navigator.pop(context, true);
-      }
+      debugPrint('[Paystack] Auto-verify firing | ref=${widget.reference}');
+      _safePopTrue();
     });
+  }
+
+  void _safePopTrue() {
+    if (_popFired || !mounted) return;
+    _popFired = true;
+    Navigator.pop(context, true);
   }
 
   bool _isCallbackUrl(WebUri? uri) {
@@ -143,7 +150,7 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
               // ── Path A: our callback URL — payment confirmed automatically ─
               if (_isCallbackUrl(uri)) {
                 debugPrint('[Paystack] Callback URL → pop(true)');
-                if (mounted) Navigator.pop(context, true);
+                _safePopTrue();
                 return NavigationActionPolicy.CANCEL;
               }
 
@@ -208,10 +215,10 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
-                          onPressed: () {
+                          onPressed: _popFired ? null : () {
                             debugPrint('[Paystack] Manual verify tapped '
                                 '| ref=${widget.reference}');
-                            Navigator.pop(context, true);
+                            _safePopTrue();
                           },
                           icon: const Icon(Icons.verified_outlined),
                           label: const Text("I've Paid — Verify Purchase"),

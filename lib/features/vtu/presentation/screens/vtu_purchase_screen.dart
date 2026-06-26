@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import 'paystack_webview_page.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/validators.dart';
@@ -35,7 +37,6 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
   bool _verifying = false;
   String? _meterType; // prepaid / postpaid for electricity
   String _paymentMethod = 'WALLET';
-  bool _launched = false;
 
   @override
   void dispose() {
@@ -84,36 +85,84 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
     final ps = ref.read(vtuPurchaseProvider);
 
     if (ps.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(ps.message ?? 'Purchase successful!'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.success,
-        ),
-      );
-      Navigator.pop(context);
-    } else if (ps.requiresPaystack) {
-      final uri = Uri.tryParse(ps.authorizationUrl!);
-      if (uri != null) {
-        final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-        if (ok && mounted) {
-          setState(() => _launched = true);
-        }
-      }
+      _showSuccess(ps.message ?? 'Purchase successful!');
+      return;
+    }
+
+    if (ps.requiresPaystack && ps.authorizationUrl != null && ps.reference != null) {
+      await _launchPaystackWebView(ps.authorizationUrl!, ps.reference!);
     }
   }
 
-  Future<void> _confirmPayment() async {
-    await ref.read(vtuHistoryProvider.notifier).refresh();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('VTU history updated — check your transactions.'),
-          behavior: SnackBarBehavior.floating,
+  Future<void> _launchPaystackWebView(String authorizationUrl, String reference) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaystackWebViewPage(
+          authorizationUrl: authorizationUrl,
+          reference: reference,
         ),
-      );
-      Navigator.pop(context);
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (result == true) {
+      // WebView intercepted the success callback — now verify + trigger VTPass
+      await ref.read(vtuPurchaseProvider.notifier).verifyPayment(reference);
+      if (!mounted) return;
+      final ps = ref.read(vtuPurchaseProvider);
+      if (ps.success) {
+        _showSuccess(ps.message ?? 'Purchase successful!');
+      } else {
+        _showVerifyError(reference, ps.error);
+      }
     }
+    // result == false or null means user cancelled — do nothing
+  }
+
+  void _showSuccess(String message) {
+    ref.read(vtuHistoryProvider.notifier).refresh();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.success,
+      ),
+    );
+    Navigator.pop(context);
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
+    );
+  }
+
+  void _showVerifyError(String reference, String? error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Verification failed: ${error ?? 'unknown error'}. '
+          'If you paid, check VTU history to confirm.',
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Theme.of(context).colorScheme.error,
+        duration: const Duration(seconds: 8),
+        action: SnackBarAction(
+          label: 'History',
+          textColor: Colors.white,
+          onPressed: () {
+            Navigator.pop(context);
+            context.push(AppRoutes.vtuHistory);
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -361,19 +410,17 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
                 const SizedBox(height: AppDimensions.spacingXl),
 
                 // ─── Payment method ────────────────────────────────
-                if (!_launched) ...[
-                  const _SectionLabel(text: 'Payment Method'),
-                  const SizedBox(height: AppDimensions.spacingSm),
-                  _PaymentMethodSelector(
-                    selected: _paymentMethod,
-                    walletBalance: walletAsync.valueOrNull?.balance,
-                    onChanged: (m) => setState(() => _paymentMethod = m),
-                  ),
-                  const SizedBox(height: AppDimensions.spacingLg),
-                ],
+                const _SectionLabel(text: 'Payment Method'),
+                const SizedBox(height: AppDimensions.spacingSm),
+                _PaymentMethodSelector(
+                  selected: _paymentMethod,
+                  walletBalance: walletAsync.valueOrNull?.balance,
+                  onChanged: (m) => setState(() => _paymentMethod = m),
+                ),
+                const SizedBox(height: AppDimensions.spacingLg),
 
                 // ─── Error display ─────────────────────────────────
-                if (purchaseState.error != null && !_launched)
+                if (purchaseState.error != null)
                   Padding(
                     padding: const EdgeInsets.only(
                         bottom: AppDimensions.spacingMd,),
@@ -384,68 +431,19 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
                     ),
                   ),
 
-                // ─── Paystack post-launch state ────────────────────
-                if (_launched) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(AppDimensions.spacingMd),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                      border: Border.all(color: AppColors.success.withOpacity(0.3)),
-                    ),
-                    child: Column(
-                      children: [
-                        const Icon(Icons.open_in_browser,
-                            color: AppColors.success, size: 32),
-                        const SizedBox(height: AppDimensions.spacingSm),
-                        Text(
-                          'Payment page opened in your browser.',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.success,
-                                fontWeight: FontWeight.w600,
-                              ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: AppDimensions.spacingXs),
-                        Text(
-                          'Complete the payment, then tap the button below.',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppDimensions.spacingMd),
-                  AppButton(
-                    label: 'I\'ve Paid — Confirm Purchase',
-                    onPressed: _confirmPayment,
-                    icon: const Icon(Icons.check_circle_outline),
-                  ),
-                  const SizedBox(height: AppDimensions.spacingSm),
-                  Center(
-                    child: TextButton(
-                      onPressed: () => setState(() => _launched = false),
-                      child: const Text('Cancel / Go back'),
-                    ),
-                  ),
-                ],
-
                 // ─── Submit ────────────────────────────────────────
-                if (!_launched)
-                  AppButton(
-                    label: _paymentMethod == 'DIRECT'
-                        ? 'Pay with Paystack'
-                        : 'Proceed',
-                    onPressed: _canSubmit && !purchaseState.isLoading
-                        ? _submit
-                        : null,
-                    isLoading: purchaseState.isLoading,
-                    icon: Icon(_paymentMethod == 'DIRECT'
-                        ? Icons.payment_outlined
-                        : Icons.check_circle_outline),
-                  ),
+                AppButton(
+                  label: _paymentMethod == 'DIRECT'
+                      ? 'Pay with Paystack'
+                      : 'Proceed',
+                  onPressed: _canSubmit && !purchaseState.isLoading
+                      ? _submit
+                      : null,
+                  isLoading: purchaseState.isLoading,
+                  icon: Icon(_paymentMethod == 'DIRECT'
+                      ? Icons.payment_outlined
+                      : Icons.check_circle_outline),
+                ),
               ],
             ],
           ),

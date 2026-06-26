@@ -86,7 +86,7 @@ class VtuPurchaseNotifier extends AutoDisposeNotifier<VtuPurchaseState> {
         billersCode: billersCode,
         paymentMethod: paymentMethod,
       );
-      // DIRECT payment: server returns authorization_url instead of completing
+      // DIRECT payment: server returns authorization_url to open in WebView
       final authUrl = result['authorization_url']?.toString();
       if (authUrl != null) {
         state = VtuPurchaseState(
@@ -101,6 +101,31 @@ class VtuPurchaseNotifier extends AutoDisposeNotifier<VtuPurchaseState> {
     } catch (e) {
       state = VtuPurchaseState(error: e.toString());
       return false;
+    }
+  }
+
+  Future<void> verifyPayment(String reference) async {
+    state = const VtuPurchaseState(isLoading: true);
+    final ds = ref.read(vtuDatasourceProvider);
+    try {
+      final result = await ds.verifyPayment(reference);
+      final ok = result['status']?.toString() == 'success';
+      state = VtuPurchaseState(
+        success: ok,
+        message: result['message']?.toString() ?? (ok ? 'Purchase successful' : 'Payment verification failed'),
+        error: ok ? null : (result['message']?.toString() ?? 'Payment verification failed'),
+      );
+    } catch (e) {
+      // Backend unreachable — check Supabase directly in case the webhook
+      // already fulfilled the purchase while the device had no connectivity.
+      try {
+        final status = await ds.checkTransactionStatus(reference);
+        if (status == 'COMPLETED') {
+          state = const VtuPurchaseState(success: true, message: 'Purchase successful');
+          return;
+        }
+      } catch (_) {}
+      state = VtuPurchaseState(error: e.toString());
     }
   }
 
