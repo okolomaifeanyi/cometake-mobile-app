@@ -33,7 +33,7 @@ abstract final class DioClient {
     );
 
     dio.interceptors.addAll([
-      AuthInterceptor(supabaseClient),
+      AuthInterceptor(supabaseClient, dio),
       RetryInterceptor(dio),
       if (kDebugMode)
         LogInterceptor(
