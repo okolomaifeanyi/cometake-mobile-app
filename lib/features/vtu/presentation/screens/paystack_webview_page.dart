@@ -43,6 +43,13 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
     WidgetsBinding.instance.addObserver(this);
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      // Chrome UA: Paystack serves different (less-restrictive) CORP/COOP headers
+      // to Chrome than to the generic Android WebView UA string.
+      ..setUserAgent(
+        'Mozilla/5.0 (Linux; Android 10; K) '
+        'AppleWebKit/537.36 (KHTML, like Gecko) '
+        'Chrome/124.0.0.0 Mobile Safari/537.36',
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (_) => setState(() => _loading = true),
@@ -50,6 +57,14 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
           onNavigationRequest: (req) {
             final uri = Uri.tryParse(req.url);
             if (uri == null) return NavigationDecision.prevent;
+
+            // Paystack's cookie-support test page fails in Android WebView with
+            // ERR_BLOCK_BY_RESPONSE. Block the redirect so the checkout form
+            // stays visible; Paystack gracefully falls back without it.
+            if (uri.host.contains('paystack.com') &&
+                uri.path.contains('cookie-support')) {
+              return NavigationDecision.prevent;
+            }
 
             // ── Path A: our callback URL — payment confirmed automatically ──
             if (_isCallbackUrl(uri)) {
