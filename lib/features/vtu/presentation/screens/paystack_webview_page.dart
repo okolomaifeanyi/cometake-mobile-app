@@ -1,18 +1,27 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
 /// Opens Paystack's authorization URL in an in-app WebView.
 ///
+/// Why flutter_inappwebview instead of webview_flutter:
+///   webview_flutter v4 has no API for thirdPartyCookiesEnabled. Android
+///   WebView disables third-party cookies by default, which causes
+///   Paystack's cookie-support test (paystack.com/public/test/cookie-support/
+///   start.html) to fail with ERR_BLOCK_BY_RESPONSE before the checkout
+///   form even loads. flutter_inappwebview exposes this as a first-class
+///   setting.
+///
 /// Completion paths:
 ///   A. Paystack redirects to cometake.net/vtu/verify → auto-detected,
 ///      pop(true) fires immediately.
-///   B. Paystack redirects to a bank/wallet deep link (btravel://, opay://, etc.)
-///      → launched externally + manual "I've Paid" overlay shown.
-///      When the user returns to this app, verification is auto-triggered after
-///      a 1.5s settle window so the webhook has time to complete first.
+///   B. Paystack redirects to a bank/wallet deep link (btravel://, opay://)
+///      → launched externally; overlay shown with manual "I've Paid" button.
+///      When the app resumes, verification is auto-triggered after 1.5s
+///      to give the Paystack webhook time to complete first.
 class PaystackWebViewPage extends StatefulWidget {
   final String authorizationUrl;
   final String reference;
@@ -29,7 +38,7 @@ class PaystackWebViewPage extends StatefulWidget {
 
 class _PaystackWebViewPageState extends State<PaystackWebViewPage>
     with WidgetsBindingObserver {
-  late final WebViewController _controller;
+  InAppWebViewController? _controller;
   bool _loading = true;
   bool _externalLaunched = false;
   bool _autoVerifyScheduled = false;
@@ -37,58 +46,21 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
   static const _callbackHosts = ['cometake.net'];
   static const _callbackPaths = ['/vtu/verify', '/checkout/verify'];
 
+  // No userAgent override — use device default so Paystack sees the real
+  // browser. No MIXED_CONTENT_ALWAYS_ALLOW — enable only if testing proves
+  // it's required.
+  static final _settings = InAppWebViewSettings(
+    javaScriptEnabled: true,
+    domStorageEnabled: true,
+    thirdPartyCookiesEnabled: true,
+    useShouldOverrideUrlLoading: true,
+  );
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      // Chrome UA: Paystack serves different (less-restrictive) CORP/COOP headers
-      // to Chrome than to the generic Android WebView UA string.
-      ..setUserAgent(
-        'Mozilla/5.0 (Linux; Android 10; K) '
-        'AppleWebKit/537.36 (KHTML, like Gecko) '
-        'Chrome/124.0.0.0 Mobile Safari/537.36',
-      )
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (_) => setState(() => _loading = true),
-          onPageFinished: (_) => setState(() => _loading = false),
-          onNavigationRequest: (req) {
-            final uri = Uri.tryParse(req.url);
-            if (uri == null) return NavigationDecision.prevent;
-
-            // Paystack's cookie-support test page fails in Android WebView with
-            // ERR_BLOCK_BY_RESPONSE. Block the redirect so the checkout form
-            // stays visible; Paystack gracefully falls back without it.
-            if (uri.host.contains('paystack.com') &&
-                uri.path.contains('cookie-support')) {
-              return NavigationDecision.prevent;
-            }
-
-            // ── Path A: our callback URL — payment confirmed automatically ──
-            if (_isCallbackUrl(uri)) {
-              Navigator.pop(context, true);
-              return NavigationDecision.prevent;
-            }
-
-            // ── Path B: bank/wallet deep link (btravel://, opay://, etc.) ───
-            if (uri.scheme != 'http' && uri.scheme != 'https') {
-              launchUrl(uri, mode: LaunchMode.externalApplication)
-                  .catchError((_) => false);
-              if (mounted) setState(() => _externalLaunched = true);
-              return NavigationDecision.prevent;
-            }
-
-            return NavigationDecision.navigate;
-          },
-          onWebResourceError: (err) {
-            if (err.isForMainFrame == false) return;
-            if (err.errorCode == -1) return;
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse(widget.authorizationUrl));
+    debugPrint('[Paystack] WebView init | ref=${widget.reference}');
   }
 
   @override
@@ -99,19 +71,27 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    debugPrint('[Paystack] Lifecycle: $state '
+        '| externalLaunched=$_externalLaunched '
+        '| autoVerifyScheduled=$_autoVerifyScheduled');
+
     if (state != AppLifecycleState.resumed) return;
     if (!_externalLaunched || _autoVerifyScheduled || !mounted) return;
 
-    // User returned from external payment app. Wait 1.5s to give the Paystack
-    // webhook time to arrive and complete before our manual verify fires.
-    // If webhook already ran, fulfillVtuDirectPurchase returns early (idempotent).
+    debugPrint('[Paystack] Resumed after external payment — '
+        'scheduling auto-verify in 1500ms for ref=${widget.reference}');
     setState(() => _autoVerifyScheduled = true);
+
     Future<void>.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) Navigator.pop(context, true);
+      if (mounted) {
+        debugPrint('[Paystack] Auto-verify firing | ref=${widget.reference}');
+        Navigator.pop(context, true);
+      }
     });
   }
 
-  bool _isCallbackUrl(Uri uri) {
+  bool _isCallbackUrl(WebUri? uri) {
+    if (uri == null) return false;
     if (!_callbackHosts.contains(uri.host)) return false;
     return _callbackPaths.any((p) => uri.path.startsWith(p));
   }
@@ -123,17 +103,69 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
         title: const Text('Paystack Payment'),
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context, false),
+          onPressed: () {
+            debugPrint('[Paystack] User closed WebView | ref=${widget.reference}');
+            Navigator.pop(context, false);
+          },
         ),
       ),
       body: Stack(
         children: [
-          WebViewWidget(controller: _controller),
+          InAppWebView(
+            initialUrlRequest: URLRequest(
+              url: WebUri(widget.authorizationUrl),
+            ),
+            initialSettings: _settings,
+            onWebViewCreated: (controller) {
+              _controller = controller;
+              debugPrint('[Paystack] WebView created');
+            },
+            onLoadStart: (controller, url) {
+              debugPrint('[Paystack] Load start: $url');
+              if (mounted) setState(() => _loading = true);
+            },
+            onLoadStop: (controller, url) {
+              debugPrint('[Paystack] Load complete: $url');
+              if (mounted) setState(() => _loading = false);
+            },
+            onProgressChanged: (controller, progress) {
+              if (progress == 100 && mounted) setState(() => _loading = false);
+            },
+            onReceivedError: (controller, request, error) {
+              debugPrint('[Paystack] ERROR: ${error.description} '
+                  '(type=${error.type}) url=${request.url}');
+            },
+            shouldOverrideUrlLoading: (controller, action) async {
+              final uri = action.request.url;
+              final scheme = uri?.scheme ?? '';
+              debugPrint('[Paystack] Navigation: $uri (scheme=$scheme)');
+
+              // ── Path A: our callback URL — payment confirmed automatically ─
+              if (_isCallbackUrl(uri)) {
+                debugPrint('[Paystack] Callback URL → pop(true)');
+                if (mounted) Navigator.pop(context, true);
+                return NavigationActionPolicy.CANCEL;
+              }
+
+              // ── Path B: deep link (btravel://, opay://, etc.) ────────────
+              if (scheme != 'http' && scheme != 'https') {
+                debugPrint('[Paystack] Deep link → launching externally: $uri');
+                launchUrl(
+                  Uri.parse(uri.toString()),
+                  mode: LaunchMode.externalApplication,
+                ).catchError((_) => false);
+                if (mounted) setState(() => _externalLaunched = true);
+                return NavigationActionPolicy.CANCEL;
+              }
+
+              return NavigationActionPolicy.ALLOW;
+            },
+          ),
 
           if (_loading && !_externalLaunched)
             const Center(child: CircularProgressIndicator(strokeWidth: 2)),
 
-          // ── Manual confirm overlay (Path B) ─────────────────────────────
+          // ── Manual confirm overlay (Path B) ───────────────────────────────
           if (_externalLaunched)
             Positioned(
               left: 0,
@@ -164,29 +196,39 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
                       const SizedBox(height: 4),
                       Text(
                         'When done, tap the button below.',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
-                          onPressed: () => Navigator.pop(context, true),
+                          onPressed: () {
+                            debugPrint('[Paystack] Manual verify tapped '
+                                '| ref=${widget.reference}');
+                            Navigator.pop(context, true);
+                          },
                           icon: const Icon(Icons.verified_outlined),
                           label: const Text("I've Paid — Verify Purchase"),
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.success,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 14),
                           ),
                         ),
                       ),
                       const SizedBox(height: 8),
                       TextButton(
-                        onPressed: () => Navigator.pop(context, false),
+                        onPressed: () {
+                          debugPrint('[Paystack] Cancelled by user '
+                              '| ref=${widget.reference}');
+                          Navigator.pop(context, false);
+                        },
                         child: const Text('Cancel'),
                       ),
                     ] else ...[
