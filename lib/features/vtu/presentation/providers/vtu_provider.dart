@@ -107,25 +107,54 @@ class VtuPurchaseNotifier extends AutoDisposeNotifier<VtuPurchaseState> {
   Future<void> verifyPayment(String reference) async {
     state = const VtuPurchaseState(isLoading: true);
     final ds = ref.read(vtuDatasourceProvider);
-    try {
-      final result = await ds.verifyPayment(reference);
-      final ok = result['status']?.toString() == 'success';
-      state = VtuPurchaseState(
-        success: ok,
-        message: result['message']?.toString() ?? (ok ? 'Purchase successful' : 'Payment verification failed'),
-        error: ok ? null : (result['message']?.toString() ?? 'Payment verification failed'),
-      );
-    } catch (e) {
-      // Backend unreachable — check Supabase directly in case the webhook
-      // already fulfilled the purchase while the device had no connectivity.
+
+    // Retry up to 3 times (5 s apart) when Paystack hasn't confirmed yet.
+    // OPay → Paystack hand-off can take 5–15 s, so the first poll often
+    // returns "Payment not successful" even after the user has paid.
+    const maxAttempts = 4;
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      if (attempt > 0) {
+        await Future<void>.delayed(const Duration(seconds: 5));
+      }
+
       try {
-        final status = await ds.checkTransactionStatus(reference);
+        final result = await ds.verifyPayment(reference);
+        final ok = result['status']?.toString() == 'success';
+        final msg = result['message']?.toString();
+
+        if (ok) {
+          state = VtuPurchaseState(success: true, message: msg ?? 'Purchase successful');
+          return;
+        }
+
+        // "Payment not successful" = Paystack hasn't received bank confirmation
+        // yet — retry. Any other message (amount mismatch, etc.) is final.
+        final isPending = msg == null || msg == 'Payment not successful';
+        if (isPending && attempt < maxAttempts - 1) continue;
+
+        // Final attempt or definitive failure — check Supabase in case the
+        // webhook already fulfilled the purchase server-side.
+        final status = await ds.checkTransactionStatus(reference).catchError((_) => null);
         if (status == 'COMPLETED') {
           state = const VtuPurchaseState(success: true, message: 'Purchase successful');
           return;
         }
-      } catch (_) {}
-      state = VtuPurchaseState(error: e.toString());
+
+        state = VtuPurchaseState(
+          error: msg ?? 'Payment verification failed',
+        );
+        return;
+      } catch (e) {
+        if (attempt < maxAttempts - 1) continue;
+
+        // Network error on final attempt — Supabase fallback.
+        final status = await ds.checkTransactionStatus(reference).catchError((_) => null);
+        if (status == 'COMPLETED') {
+          state = const VtuPurchaseState(success: true, message: 'Purchase successful');
+          return;
+        }
+        state = VtuPurchaseState(error: e.toString());
+      }
     }
   }
 

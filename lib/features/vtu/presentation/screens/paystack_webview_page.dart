@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -20,8 +19,9 @@ import '../../../../core/theme/app_colors.dart';
 ///      pop(true) fires immediately.
 ///   B. Paystack redirects to a bank/wallet deep link (btravel://, opay://)
 ///      → launched externally; overlay shown with manual "I've Paid" button.
-///      When the app resumes, verification is auto-triggered after 1.5s
-///      to give the Paystack webhook time to complete first.
+///      The user presses "I've Paid" after returning from the payment app.
+///      No auto-pop on resume — OPay→Paystack confirmation can take 5–15s,
+///      so auto-verifying immediately races the bank's confirmation window.
 class PaystackWebViewPage extends StatefulWidget {
   final String authorizationUrl;
   final String reference;
@@ -41,9 +41,8 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
   InAppWebViewController? _controller;
   bool _loading = true;
   bool _externalLaunched = false;
-  bool _autoVerifyScheduled = false;
-  // Guards all pop paths — prevents double-pop if the manual button, the
-  // 1.5s auto-verify timer, and the callback URL intercept race each other.
+  // Guards all pop paths — prevents double-pop if the manual button and the
+  // callback URL intercept somehow race each other.
   bool _popFired = false;
 
   static const _callbackHosts = ['cometake.net'];
@@ -75,20 +74,7 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     debugPrint('[Paystack] Lifecycle: $state '
-        '| externalLaunched=$_externalLaunched '
-        '| autoVerifyScheduled=$_autoVerifyScheduled');
-
-    if (state != AppLifecycleState.resumed) return;
-    if (!_externalLaunched || _autoVerifyScheduled || !mounted) return;
-
-    debugPrint('[Paystack] Resumed after external payment — '
-        'scheduling auto-verify in 1500ms for ref=${widget.reference}');
-    setState(() => _autoVerifyScheduled = true);
-
-    Future<void>.delayed(const Duration(milliseconds: 1500), () {
-      debugPrint('[Paystack] Auto-verify firing | ref=${widget.reference}');
-      _safePopTrue();
-    });
+        '| externalLaunched=$_externalLaunched');
   }
 
   void _safePopTrue() {
@@ -184,64 +170,44 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      _autoVerifyScheduled
-                          ? Icons.hourglass_bottom_rounded
-                          : Icons.check_circle_outline,
+                    const Icon(
+                      Icons.check_circle_outline,
                       color: AppColors.success,
                       size: 40,
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      _autoVerifyScheduled
-                          ? 'Verifying your payment…'
-                          : 'Complete your payment in the app that just opened.',
+                      'Complete your payment in the app that opened,\n'
+                      'then tap below to confirm.',
                       style: Theme.of(context).textTheme.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
-                    if (!_autoVerifyScheduled) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'When done, tap the button below.',
-                        style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: _popFired ? null : () {
-                            debugPrint('[Paystack] Manual verify tapped '
-                                '| ref=${widget.reference}');
-                            _safePopTrue();
-                          },
-                          icon: const Icon(Icons.verified_outlined),
-                          label: const Text("I've Paid — Verify Purchase"),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.success,
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 14),
-                          ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _popFired ? null : () {
+                          debugPrint('[Paystack] Manual verify tapped '
+                              '| ref=${widget.reference}');
+                          _safePopTrue();
+                        },
+                        icon: const Icon(Icons.verified_outlined),
+                        label: const Text("I've Paid — Verify Purchase"),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.success,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: () {
-                          debugPrint('[Paystack] Cancelled by user '
-                              '| ref=${widget.reference}');
-                          Navigator.pop(context, false);
-                        },
-                        child: const Text('Cancel'),
-                      ),
-                    ] else ...[
-                      const SizedBox(height: 16),
-                      const LinearProgressIndicator(),
-                    ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () {
+                        debugPrint('[Paystack] Cancelled by user '
+                            '| ref=${widget.reference}');
+                        Navigator.pop(context, false);
+                      },
+                      child: const Text('Cancel'),
+                    ),
                   ],
                 ),
               ),
