@@ -1,10 +1,13 @@
+import 'dart:math';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/network/dio_client.dart';
+import '../models/checkout_result_model.dart';
 import '../models/order_model.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
 
 const _kOrderSelect = '''
   id, order_number, status, payment_status, total, created_at,
@@ -129,7 +132,60 @@ class SupabaseOrdersDatasource {
     }
   }
 
-  // ─── Place order (Next.js API) ────────────────────────────────────────────
+  // ─── Checkout (Next.js API — idempotent, retries on 409/503) ────────────────
+  //
+  // Sends an Idempotency-Key header so the server can detect duplicate requests.
+  // 409 canRestart:true  → key is expired; generate a new UUID and retry.
+  // 503 recoverable:true → another request is in-flight; retry with same key after 2s.
+  // All other non-2xx → rethrow as ServerException.
+
+  Future<CheckoutResultModel> checkout({
+    required String addressId,
+    String? notes,
+  }) async {
+    String idempotencyKey = _uuid();
+    const maxRetries = 3;
+
+    for (int attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        final response = await _dio.post<Map<String, dynamic>>(
+          '/api/v1/checkout',
+          data: {'addressId': addressId, if (notes != null) 'notes': notes},
+          options: Options(headers: {'Idempotency-Key': idempotencyKey}),
+        );
+        return CheckoutResultModel.fromJson(response.data!);
+      } on DioException catch (e) {
+        final status = e.response?.statusCode;
+        final body   = e.response?.data as Map<String, dynamic>?;
+
+        if (status == 409 && body?['canRestart'] == true) {
+          if (attempt < maxRetries) {
+            idempotencyKey = _uuid(); // fresh key — server treated old one as expired
+            continue;
+          }
+          throw const CheckoutExpiredException();
+        }
+
+        if (status == 503 && body?['recoverable'] == true) {
+          if (attempt < maxRetries) {
+            await Future<void>.delayed(const Duration(seconds: 2));
+            continue; // same key — server will return cached result
+          }
+          throw const CheckoutRecoverableException();
+        }
+
+        final msg = body?['error'] as String? ?? 'Failed to place order.';
+        throw ServerException(msg, statusCode: status);
+      } catch (e) {
+        if (e is AppException) rethrow;
+        throw const ServerException('Failed to place order.');
+      }
+    }
+
+    throw const ServerException('Checkout failed after maximum retries.');
+  }
+
+  // ─── Legacy placeOrder — kept for tests; internally calls checkout() ─────────
 
   Future<OrderModel> placeOrder({
     required String addressId,
@@ -148,6 +204,17 @@ class SupabaseOrdersDatasource {
       throw const ServerException('Failed to place order.');
     }
   }
+}
+
+// V4 UUID without the uuid package — uses dart:math Random.secure().
+String _uuid() {
+  final rng   = Random.secure();
+  final bytes = List<int>.generate(16, (_) => rng.nextInt(256));
+  bytes[6] = (bytes[6] & 0x0F) | 0x40; // version 4
+  bytes[8] = (bytes[8] & 0x3F) | 0x80; // variant 10xx
+  final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+      '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
 }
 
 // Provider factory helper (used in orders_provider.dart)

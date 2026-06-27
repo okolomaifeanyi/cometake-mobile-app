@@ -44,4 +44,9 @@ abstract final class AppRoutes {
   static const vendorAddProduct = '/vendor/add-product';
   static const vendorEditProduct = '/vendor/edit-product/:productId';
   static String vendorEditProductPath(String id) => '/vendor/edit-product/$id';
+
+  // Order payment WebView — receives CheckoutResultModel via GoRouter extra.
+  // authorizationUrl is NOT put in the path to avoid URL-encoding Paystack's long URL.
+  static const orderPayment = '/payment/:paymentId';
+  static String orderPaymentPath(String paymentId) => '/payment/$paymentId';
 }

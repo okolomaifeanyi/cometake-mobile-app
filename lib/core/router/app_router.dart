@@ -6,8 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/cart/presentation/screens/cart_screen.dart';
+import '../../features/orders/data/models/checkout_result_model.dart';
 import '../../features/orders/presentation/screens/checkout_screen.dart';
 import '../../features/orders/presentation/screens/order_detail_screen.dart';
+import '../../features/orders/presentation/screens/order_payment_screen.dart';
 import '../../features/orders/presentation/screens/orders_screen.dart';
 import '../../features/products/domain/entities/product.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
@@ -202,6 +204,20 @@ final appRouterProvider = Provider<GoRouter>(
               },
             ),
           ],
+        ),
+
+        // ── Order payment — full-screen WebView, outside ShellRoute ──────────
+        // Placed here (not inside ShellRoute) so the bottom nav bar is hidden
+        // during the payment flow. GoRouter's global redirect still protects it.
+        // extra: CheckoutResultModel (passed by checkout_screen.dart via context.push).
+        // If extra is null (e.g. direct deep-link), redirect to orders list.
+        GoRoute(
+          path: AppRoutes.orderPayment,
+          redirect: (_, state) =>
+              state.extra is CheckoutResultModel ? null : AppRoutes.orders,
+          builder: (_, state) => OrderPaymentScreen(
+            result: state.extra! as CheckoutResultModel,
+          ),
         ),
       ],
     );

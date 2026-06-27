@@ -45,18 +45,31 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   Future<void> _placeOrder() async {
     if (_selectedAddress == null) return;
 
-    final notifier = ref.read(checkoutProvider.notifier);
-    final order = await notifier.placeOrder(addressId: _selectedAddress!.id);
+    final result = await ref
+        .read(checkoutProvider.notifier)
+        .placeOrder(addressId: _selectedAddress!.id);
 
-    if (!mounted) return;
-    if (order != null) {
-      context.go(AppRoutes.orderDetailPath(order.id));
+    if (!mounted || result == null) return;
+
+    if (result.authorizationUrl != null && result.reference != null) {
+      // Navigate to in-app WebView for Paystack payment.
+      // Pass the full result as GoRouter extra — avoids URL-encoding a long URL.
+      context.push(
+        AppRoutes.orderPaymentPath(result.paymentId),
+        extra: result,
+      );
+    } else {
+      // Order created but Paystack init failed (cron will retry).
+      // Navigate to order detail where user can re-trigger payment.
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Order placed successfully!'),
+          content: Text(
+            'Order placed! Payment link unavailable — complete payment from your order.',
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
+      context.go(AppRoutes.orderDetailPath(result.orderId));
     }
   }
 

@@ -1,3 +1,4 @@
+import '../../data/models/checkout_result_model.dart';
 import '../entities/order.dart';
 
 abstract class OrdersRepository {
@@ -14,5 +15,6 @@ abstract class OrdersRepository {
     String? postalCode,
     bool isDefault = false,
   });
+  Future<CheckoutResultModel> checkout({required String addressId, String? notes});
   Future<Order> placeOrder({required String addressId, String? notes});
 }

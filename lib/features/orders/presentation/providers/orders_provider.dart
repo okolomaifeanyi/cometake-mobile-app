@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_handler.dart';
 import '../../data/datasources/supabase_orders_datasource.dart';
+import '../../data/models/checkout_result_model.dart';
 import '../../data/repositories/orders_repository_impl.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/repositories/orders_repository.dart';
@@ -92,34 +93,35 @@ class AddressesNotifier extends AsyncNotifier<List<Address>> {
 // ─── Checkout / Place order ───────────────────────────────────────────────────
 
 final checkoutProvider =
-    AsyncNotifierProvider<CheckoutNotifier, Order?>(
+    AsyncNotifierProvider<CheckoutNotifier, CheckoutResultModel?>(
   CheckoutNotifier.new,
   name: 'checkoutProvider',
 );
 
-class CheckoutNotifier extends AsyncNotifier<Order?> {
+class CheckoutNotifier extends AsyncNotifier<CheckoutResultModel?> {
   @override
-  Future<Order?> build() async => null;
+  Future<CheckoutResultModel?> build() async => null;
 
-  Future<Order?> placeOrder({required String addressId, String? notes}) async {
+  Future<CheckoutResultModel?> placeOrder({
+    required String addressId,
+    String? notes,
+  }) async {
     state = const AsyncLoading();
     try {
-      final order = await ref
+      final result = await ref
           .read(ordersRepositoryProvider)
-          .placeOrder(addressId: addressId, notes: notes);
-      state = AsyncData(order);
-      // Clear cart after successful order
-      ref.read(cartNotifierProvider.notifier).clearCart();
-      // Refresh orders list
+          .checkout(addressId: addressId, notes: notes);
+      state = AsyncData(result);
+      // Clear cart server-side delete already ran; invalidate local cache.
+      await ref.read(cartNotifierProvider.notifier).clearCart();
       ref.invalidate(ordersNotifierProvider);
-      return order;
+      return result;
     } on AppException catch (e) {
       state = AsyncError(ErrorHandler.handle(e), StackTrace.current);
       return null;
     } catch (e) {
       state = AsyncError(
-        ErrorHandler.handle(
-            const ServerException('Failed to place order.'),),
+        ErrorHandler.handle(const ServerException('Failed to place order.')),
         StackTrace.current,
       );
       return null;

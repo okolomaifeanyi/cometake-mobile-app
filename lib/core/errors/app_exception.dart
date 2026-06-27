@@ -38,3 +38,17 @@ final class CacheException extends AppException {
 final class UploadException extends AppException {
   const UploadException([super.message = 'File upload failed']);
 }
+
+// 409 canRestart:true — idempotency key expired; caller should generate a new key and retry.
+final class CheckoutExpiredException extends AppException {
+  final bool canRestart;
+  const CheckoutExpiredException({this.canRestart = true})
+      : super('Checkout session expired — please try again');
+}
+
+// 503 recoverable:true — another checkout request for the same key is in progress.
+// Caller should retry with the same key after a short delay.
+final class CheckoutRecoverableException extends AppException {
+  const CheckoutRecoverableException()
+      : super('Checkout in progress — please retry');
+}

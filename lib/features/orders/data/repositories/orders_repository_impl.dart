@@ -2,6 +2,7 @@ import '../../../../core/errors/app_exception.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/repositories/orders_repository.dart';
 import '../datasources/supabase_orders_datasource.dart';
+import '../models/checkout_result_model.dart';
 import '../models/order_model.dart';
 
 class OrdersRepositoryImpl implements OrdersRepository {
@@ -64,6 +65,20 @@ class OrdersRepositoryImpl implements OrdersRepository {
       rethrow;
     } catch (_) {
       throw const ServerException('Could not save address.');
+    }
+  }
+
+  @override
+  Future<CheckoutResultModel> checkout({
+    required String addressId,
+    String? notes,
+  }) async {
+    try {
+      return await _datasource.checkout(addressId: addressId, notes: notes);
+    } on AppException {
+      rethrow;
+    } catch (_) {
+      throw const ServerException('Could not complete checkout.');
     }
   }
 
