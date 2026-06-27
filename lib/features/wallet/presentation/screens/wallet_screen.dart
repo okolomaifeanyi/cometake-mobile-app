@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,10 +21,10 @@ class WalletScreen extends ConsumerWidget {
       backgroundColor: context.bg,
       body: RefreshIndicator(
         color: AppColors.figmaGreen,
-        onRefresh: () async {
-          await ref.read(walletNotifierProvider.notifier).refresh();
-          ref.read(walletTransactionsProvider.notifier).refresh();
-        },
+        onRefresh: () => Future.wait([
+          ref.read(walletNotifierProvider.notifier).refresh(),
+          ref.read(walletTransactionsProvider.notifier).refresh(),
+        ]),
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
@@ -63,10 +65,10 @@ class _WalletAppBar extends StatelessWidget {
           ),
           const Spacer(),
           GestureDetector(
-            onTap: () async {
-              await ref.read(walletNotifierProvider.notifier).refresh();
-              ref.read(walletTransactionsProvider.notifier).refresh();
-            },
+            onTap: () => unawaited(Future.wait([
+              ref.read(walletNotifierProvider.notifier).refresh(),
+              ref.read(walletTransactionsProvider.notifier).refresh(),
+            ]),),
             child: Icon(Icons.refresh, color: context.t4, size: 22),
           ),
         ],
