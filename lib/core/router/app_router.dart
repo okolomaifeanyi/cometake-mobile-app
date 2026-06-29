@@ -71,8 +71,10 @@ final appRouterProvider = Provider<GoRouter>(
         ),
         GoRoute(
           path: AppRoutes.otp,
+          // Phone must be passed via context.go(AppRoutes.otp, extra: phoneNumber).
+          // Query parameters are rejected to prevent deep-link injection attacks.
           builder: (_, state) => OtpScreen(
-            phone: state.uri.queryParameters['phone'] ?? '',
+            phone: (state.extra is String) ? (state.extra as String) : '',
           ),
         ),
         GoRoute(

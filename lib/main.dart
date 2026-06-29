@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +12,18 @@ import 'core/theme/theme_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Catch Flutter framework errors (widget build errors, layout overflows, etc.)
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    // TODO: forward to Sentry / Firebase Crashlytics in production
+  };
+
+  // Catch uncaught async errors that Flutter doesn't intercept via onError above
+  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    // TODO: forward to Sentry / Firebase Crashlytics in production
+    return true; // returning true marks the error as handled
+  };
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
