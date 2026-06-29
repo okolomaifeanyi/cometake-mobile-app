@@ -1,17 +1,11 @@
 import 'package:dio/dio.dart';
 
 /// Runtime config fetched from the backend at app startup.
-/// Falls back to known-good production values if the endpoint is unreachable,
-/// so the app always boots — even before the config route is deployed.
+/// All credentials come exclusively from the /api/v1/config endpoint —
+/// no keys are embedded in the binary. If the endpoint is unreachable the app
+/// surfaces a retry screen rather than proceeding with stale credentials.
 class RemoteConfig {
   static RemoteConfig? _instance;
-
-  // Fallback values — these are public (anon key is protected by RLS).
-  // Used when GET /api/v1/config fails or hasn't been deployed yet.
-  static const _fallbackUrl = 'https://vyyhbqcxauctwqxeqwex.supabase.co';
-  static const _fallbackAnonKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ5eWhicWN4YXVjdHdxeGVxd2V4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0NTkyMTAsImV4cCI6MjA1OTAzNTIxMH0.4FtXkl0ntna-m2t2Lrea7oVtt3nEtxjcKk-Qw-29M_I';
-  static const _fallbackCloudName = 'dxi9khzro';
 
   final String supabaseUrl;
   final String supabaseAnonKey;
@@ -28,27 +22,33 @@ class RemoteConfig {
     return _instance!;
   }
 
+  /// Fetches runtime config from the server. Throws on failure — callers should
+  /// catch and show a user-friendly retry screen rather than proceeding without config.
   static Future<void> fetch({String baseUrl = 'https://cometake.net'}) async {
-    try {
-      final dio = Dio(BaseOptions(
-        baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
-      ),);
-      final res = await dio.get<Map<String, dynamic>>('/api/v1/config');
-      final data = res.data!;
-      _instance = RemoteConfig._(
-        supabaseUrl: data['url'] as String,
-        supabaseAnonKey: data['anonKey'] as String,
-        cloudinaryCloudName: data['cloudinaryCloudName'] as String? ?? _fallbackCloudName,
-      );
-    } catch (_) {
-      // Endpoint not yet deployed or network unavailable — use known values.
-      _instance = RemoteConfig._(
-        supabaseUrl: _fallbackUrl,
-        supabaseAnonKey: _fallbackAnonKey,
-        cloudinaryCloudName: _fallbackCloudName,
-      );
+    final dio = Dio(BaseOptions(
+      baseUrl: baseUrl,
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 15),
+    ),);
+    final res = await dio.get<Map<String, dynamic>>('/api/v1/config');
+    final data = res.data;
+    if (data == null) throw Exception('Config endpoint returned empty response');
+
+    final supabaseUrl = data['url'] as String?;
+    final supabaseAnonKey = data['anonKey'] as String?;
+    final cloudinaryCloudName = data['cloudinaryCloudName'] as String?;
+
+    if (supabaseUrl == null || supabaseUrl.isEmpty) {
+      throw Exception('Config missing supabaseUrl');
     }
+    if (supabaseAnonKey == null || supabaseAnonKey.isEmpty) {
+      throw Exception('Config missing supabaseAnonKey');
+    }
+
+    _instance = RemoteConfig._(
+      supabaseUrl: supabaseUrl,
+      supabaseAnonKey: supabaseAnonKey,
+      cloudinaryCloudName: cloudinaryCloudName ?? '',
+    );
   }
 }
