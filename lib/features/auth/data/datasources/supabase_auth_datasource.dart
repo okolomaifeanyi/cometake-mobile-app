@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
@@ -7,7 +8,8 @@ import 'auth_datasource.dart';
 
 class SupabaseAuthDatasource implements AuthDatasource {
   final sb.SupabaseClient _client;
-  const SupabaseAuthDatasource(this._client);
+  final Dio _dio;
+  const SupabaseAuthDatasource(this._client, this._dio);
 
   @override
   Future<AuthUserModel?> getCurrentUser() async {
@@ -183,14 +185,12 @@ class SupabaseAuthDatasource implements AuthDatasource {
   @override
   Future<void> signInWithGoogle() async {
     try {
-      // Native Google Sign-In: shows the OS account picker, gets an ID token,
-      // then exchanges it with Supabase — no browser, no WebView, no deep links.
-      // serverClientId must match the Web client ID configured in Supabase Auth.
+      // Step 1: native OS account picker — gets a Google ID token.
+      // serverClientId is the Web OAuth client ID (public value).
       final googleSignIn = GoogleSignIn(
         serverClientId:
             '423246610057-tr07jd8g9j8betjec48g594ci304mj8q.apps.googleusercontent.com',
       );
-
       final account = await googleSignIn.signIn();
       if (account == null) return; // user cancelled
 
@@ -199,17 +199,28 @@ class SupabaseAuthDatasource implements AuthDatasource {
         throw const AuthException('Google did not return an ID token.');
       }
 
-      await _client.auth.signInWithIdToken(
-        provider: sb.OAuthProvider.google,
-        idToken: auth.idToken!,
-        accessToken: auth.accessToken,
+      // Step 2: send ID token to the backend. Backend verifies with Supabase
+      // and returns a Supabase session — no Supabase keys needed in the APK.
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/api/v1/auth/google',
+        data: {'idToken': auth.idToken},
       );
+      final refreshToken = res.data?['refreshToken'] as String?;
+      if (refreshToken == null) {
+        throw const AuthException('Backend did not return a session.');
+      }
+
+      // Step 3: restore the Supabase session from the refresh token.
+      await _client.auth.setSession(refreshToken);
     } on sb.AuthException catch (e) {
       throw AuthException(_friendlyAuthMessage(e.message));
+    } on DioException catch (e) {
+      final msg = e.response?.data?['error']?.toString() ?? 'Google sign in failed';
+      throw AuthException(msg);
     } on AuthException {
       rethrow;
     } catch (e) {
-      throw AuthException('Google sign in failed: ${e.runtimeType}: $e');
+      throw AuthException('Google sign in failed: $e');
     }
   }
 

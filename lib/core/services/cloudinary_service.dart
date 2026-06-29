@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../config/env.dart';
+import '../config/remote_config.dart';
 import '../errors/app_exception.dart';
 import '../network/dio_client.dart';
 
@@ -37,7 +37,7 @@ class CloudinaryService {
       final timestamp = data['timestamp'] as int;
       final apiKey = data['api_key'] as String;
       final cloudName =
-          data['cloud_name'] as String? ?? Env.cloudinaryCloudName;
+          data['cloud_name'] as String? ?? RemoteConfig.instance.cloudinaryCloudName;
 
       // 2. Upload directly to Cloudinary
       final formData = FormData.fromMap({

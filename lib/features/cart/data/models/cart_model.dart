@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../../../../core/config/env.dart';
+import '../../../../core/config/remote_config.dart';
 import '../../domain/entities/cart.dart';
 
 part 'cart_model.freezed.dart';
@@ -66,8 +66,8 @@ extension CartItemModelX on CartItemModel {
   static String _mediaToUrl(String path) {
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
     final withoutExt = path.replaceAll(RegExp(r'\.[^/.]+$'), '');
-    final cloud = Env.cloudinaryCloudName.isNotEmpty
-        ? Env.cloudinaryCloudName
+    final cloud = RemoteConfig.instance.cloudinaryCloudName.isNotEmpty
+        ? RemoteConfig.instance.cloudinaryCloudName
         : 'dxi9khzro';
     return 'https://res.cloudinary.com/$cloud/image/upload/f_auto,q_auto,w_400,c_fill/$withoutExt';
   }

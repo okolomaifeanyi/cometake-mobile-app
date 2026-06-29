@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'
     show AuthChangeEvent, AuthState;
 
 import '../../../../core/errors/error_handler.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../../../core/supabase/supabase_module.dart';
 import '../../data/datasources/auth_datasource.dart';
 import '../../data/datasources/supabase_auth_datasource.dart';
@@ -17,7 +18,10 @@ import '../../domain/usecases/verify_otp_usecase.dart';
 // ─── Infrastructure providers ────────────────────────────────────────────────
 
 final authDatasourceProvider = Provider<AuthDatasource>((ref) {
-  return SupabaseAuthDatasource(ref.watch(supabaseClientProvider));
+  return SupabaseAuthDatasource(
+    ref.watch(supabaseClientProvider),
+    ref.watch(dioProvider),
+  );
 });
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {

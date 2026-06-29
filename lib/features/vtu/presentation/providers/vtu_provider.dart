@@ -29,35 +29,25 @@ class VtuPurchaseState {
   final String? error;
   final bool success;
   final String? message;
-  final String? authorizationUrl;
-  final String? reference;
 
   const VtuPurchaseState({
     this.isLoading = false,
     this.error,
     this.success = false,
     this.message,
-    this.authorizationUrl,
-    this.reference,
   });
-
-  bool get requiresPaystack => authorizationUrl != null;
 
   VtuPurchaseState copyWith({
     bool? isLoading,
     String? error,
     bool? success,
     String? message,
-    String? authorizationUrl,
-    String? reference,
   }) =>
       VtuPurchaseState(
         isLoading: isLoading ?? this.isLoading,
         error: error,
         success: success ?? this.success,
         message: message ?? this.message,
-        authorizationUrl: authorizationUrl,
-        reference: reference,
       );
 }
 
@@ -72,7 +62,6 @@ class VtuPurchaseNotifier extends AutoDisposeNotifier<VtuPurchaseState> {
     required String recipient,
     String? variationCode,
     String? billersCode,
-    String paymentMethod = 'WALLET',
   }) async {
     state = const VtuPurchaseState(isLoading: true);
     try {
@@ -84,77 +73,13 @@ class VtuPurchaseNotifier extends AutoDisposeNotifier<VtuPurchaseState> {
         recipient: recipient,
         variationCode: variationCode,
         billersCode: billersCode,
-        paymentMethod: paymentMethod,
       );
-      // DIRECT payment: server returns authorization_url to open in WebView
-      final authUrl = result['authorization_url']?.toString();
-      if (authUrl != null) {
-        state = VtuPurchaseState(
-          authorizationUrl: authUrl,
-          reference: result['reference']?.toString(),
-        );
-        return false;
-      }
       final msg = result['message']?.toString() ?? 'Purchase successful';
       state = VtuPurchaseState(success: true, message: msg);
       return true;
     } catch (e) {
       state = VtuPurchaseState(error: e.toString());
       return false;
-    }
-  }
-
-  Future<void> verifyPayment(String reference) async {
-    state = const VtuPurchaseState(isLoading: true);
-    final ds = ref.read(vtuDatasourceProvider);
-
-    // Retry up to 3 times (5 s apart) when Paystack hasn't confirmed yet.
-    // OPay → Paystack hand-off can take 5–15 s, so the first poll often
-    // returns "Payment not successful" even after the user has paid.
-    const maxAttempts = 4;
-    for (var attempt = 0; attempt < maxAttempts; attempt++) {
-      if (attempt > 0) {
-        await Future<void>.delayed(const Duration(seconds: 5));
-      }
-
-      try {
-        final result = await ds.verifyPayment(reference);
-        final ok = result['status']?.toString() == 'success';
-        final msg = result['message']?.toString();
-
-        if (ok) {
-          state = VtuPurchaseState(success: true, message: msg ?? 'Purchase successful');
-          return;
-        }
-
-        // "Payment not successful" = Paystack hasn't received bank confirmation
-        // yet — retry. Any other message (amount mismatch, etc.) is final.
-        final isPending = msg == null || msg == 'Payment not successful';
-        if (isPending && attempt < maxAttempts - 1) continue;
-
-        // Final attempt or definitive failure — check Supabase in case the
-        // webhook already fulfilled the purchase server-side.
-        final status = await ds.checkTransactionStatus(reference).catchError((_) => null);
-        if (status == 'COMPLETED') {
-          state = const VtuPurchaseState(success: true, message: 'Purchase successful');
-          return;
-        }
-
-        state = VtuPurchaseState(
-          error: msg ?? 'Payment verification failed',
-        );
-        return;
-      } catch (e) {
-        if (attempt < maxAttempts - 1) continue;
-
-        // Network error on final attempt — Supabase fallback.
-        final status = await ds.checkTransactionStatus(reference).catchError((_) => null);
-        if (status == 'COMPLETED') {
-          state = const VtuPurchaseState(success: true, message: 'Purchase successful');
-          return;
-        }
-        state = VtuPurchaseState(error: e.toString());
-      }
     }
   }
 

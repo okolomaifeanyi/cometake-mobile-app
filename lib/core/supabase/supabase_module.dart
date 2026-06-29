@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../config/env.dart';
+import '../config/remote_config.dart';
 
 final supabaseClientProvider = Provider<SupabaseClient>(
   (ref) => Supabase.instance.client,
@@ -10,13 +10,10 @@ final supabaseClientProvider = Provider<SupabaseClient>(
 
 abstract final class SupabaseModule {
   static Future<void> initialize() async {
+    final cfg = RemoteConfig.instance;
     await Supabase.initialize(
-      url: Env.supabaseUrl,
-      anonKey: Env.supabaseAnonKey,
-      // PKCE is the default and the only flow that reliably works on Android:
-      // Android Intents strip URL fragments, so implicit flow (tokens in #fragment)
-      // never reaches the app. PKCE sends a one-time ?code= in the query string
-      // which Android preserves, then exchanges it server-side.
+      url: cfg.supabaseUrl,
+      anonKey: cfg.supabaseAnonKey,
     );
   }
 }

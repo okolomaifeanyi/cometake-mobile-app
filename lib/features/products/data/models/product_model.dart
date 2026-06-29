@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../../../../core/config/env.dart';
+import '../../../../core/config/remote_config.dart';
 import '../../domain/entities/product.dart';
 
 part 'product_model.freezed.dart';
@@ -108,8 +108,8 @@ extension ProductModelX on ProductModel {
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
     // Legacy storage path — strip extension, prepend Cloudinary base
     final withoutExt = path.replaceAll(RegExp(r'\.[^/.]+$'), '');
-    final cloud = Env.cloudinaryCloudName.isNotEmpty
-        ? Env.cloudinaryCloudName
+    final cloud = RemoteConfig.instance.cloudinaryCloudName.isNotEmpty
+        ? RemoteConfig.instance.cloudinaryCloudName
         : 'dxi9khzro';
     return 'https://res.cloudinary.com/$cloud/image/upload/f_auto,q_auto,w_1200,c_limit/$withoutExt';
   }
