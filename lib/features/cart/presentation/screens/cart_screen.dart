@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -34,8 +36,7 @@ class CartScreen extends ConsumerWidget {
         loading: () => const AppLoadingOverlay(),
         error: (e, _) => AppErrorWidget(
           message: e.toString(),
-          onRetry: () =>
-              ref.read(cartNotifierProvider.notifier).refresh(),
+          onRetry: () => ref.read(cartNotifierProvider.notifier).refresh(),
         ),
         data: (cart) {
           if (cart.isEmpty) {
@@ -76,21 +77,33 @@ class CartScreen extends ConsumerWidget {
   Future<void> _confirmClear(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Clear cart?'),
         content: const Text('Remove all items from your cart?'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Clear'),),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Clear'),
+          ),
         ],
       ),
     );
     if (confirmed == true) {
-      ref.read(cartNotifierProvider.notifier).clearCart();
+      final ok = await ref.read(cartNotifierProvider.notifier).clearCart();
+      await ref.read(cartNotifierProvider.notifier).refresh();
+      if (context.mounted && !ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to clear cart. Please try again.'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 }
@@ -130,7 +143,7 @@ class _CartSummaryState extends State<_CartSummary> {
         color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -183,8 +196,10 @@ class _EmptyCartView extends StatelessWidget {
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: AppDimensions.spacingMd),
-            Text('Your cart is empty',
-                style: Theme.of(context).textTheme.titleMedium,),
+            Text(
+              'Your cart is empty',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: AppDimensions.spacingXs),
             Text(
               'Add some products to get started',

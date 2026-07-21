@@ -16,14 +16,28 @@ class WishlistIdsNotifier extends AsyncNotifier<List<String>> {
       ref.read(wishlistDatasourceProvider).getWishlistIds();
 
   Future<void> toggle(String productId) async {
-    final current = state.valueOrNull ?? [];
-    if (current.contains(productId)) {
-      state = AsyncData(current.where((id) => id != productId).toList());
-      await ref.read(wishlistDatasourceProvider).removeFromWishlist(productId);
-    } else {
-      state = AsyncData([...current, productId]);
-      await ref.read(wishlistDatasourceProvider).addToWishlist(productId);
+    final previous = state.valueOrNull ?? [];
+    final removing = previous.contains(productId);
+    final optimistic = removing
+        ? previous.where((id) => id != productId).toList()
+        : [...previous, productId];
+
+    state = AsyncData(optimistic);
+
+    try {
+      if (removing) {
+        await ref
+            .read(wishlistDatasourceProvider)
+            .removeFromWishlist(productId);
+      } else {
+        await ref.read(wishlistDatasourceProvider).addToWishlist(productId);
+      }
+    } catch (e) {
+      // Roll back local heart state if persistence failed.
+      state = AsyncData(previous);
+      rethrow;
     }
+
     // Invalidate the products list so the wishlist screen refreshes.
     ref.invalidate(wishlistProductsProvider);
   }

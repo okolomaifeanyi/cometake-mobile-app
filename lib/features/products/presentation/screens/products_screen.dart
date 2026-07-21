@@ -21,8 +21,15 @@ const _sortOptions = [
 
 class ProductsScreen extends ConsumerStatefulWidget {
   final String? initialCategory;
+  final String? initialSearch;
+  final String? initialSort;
 
-  const ProductsScreen({super.key, this.initialCategory});
+  const ProductsScreen({
+    super.key,
+    this.initialCategory,
+    this.initialSearch,
+    this.initialSort,
+  });
 
   @override
   ConsumerState<ProductsScreen> createState() => _ProductsScreenState();
@@ -32,16 +39,22 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   final _debouncer = Debouncer(duration: const Duration(milliseconds: 450));
+  String? _lastRouteFilterKey;
 
   @override
   void initState() {
     super.initState();
     _scrollCtrl.addListener(_onScroll);
-    final cat = widget.initialCategory;
-    if (cat != null && cat.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(productsNotifierProvider.notifier).applyCategory(cat);
-      });
+    _syncFiltersFromRoute();
+  }
+
+  @override
+  void didUpdateWidget(covariant ProductsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialCategory != widget.initialCategory ||
+        oldWidget.initialSearch != widget.initialSearch ||
+        oldWidget.initialSort != widget.initialSort) {
+      _syncFiltersFromRoute();
     }
   }
 
@@ -60,16 +73,45 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     }
   }
 
+  void _syncFiltersFromRoute() {
+    final category =
+        (widget.initialCategory != null && widget.initialCategory!.isNotEmpty)
+            ? widget.initialCategory
+            : null;
+    final search = (widget.initialSearch != null &&
+            widget.initialSearch!.trim().isNotEmpty)
+        ? widget.initialSearch!.trim()
+        : null;
+    final sort =
+        (widget.initialSort != null && widget.initialSort!.trim().isNotEmpty)
+            ? widget.initialSort!.trim()
+            : null;
+
+    final key = '${category ?? ''}|${search ?? ''}|${sort ?? ''}';
+    if (key == _lastRouteFilterKey) return;
+    _lastRouteFilterKey = key;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_searchCtrl.text != (search ?? '')) {
+        _searchCtrl.text = search ?? '';
+      }
+      ref.read(productsNotifierProvider.notifier).applyRouteFilters(
+            categoryId: category,
+            search: search,
+            sort: sort,
+          );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(productsNotifierProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
       body: RefreshIndicator(
-        onRefresh: () =>
-            ref.read(productsNotifierProvider.notifier).refresh(),
+        onRefresh: () => ref.read(productsNotifierProvider.notifier).refresh(),
         child: CustomScrollView(
           controller: _scrollCtrl,
           slivers: [
@@ -77,6 +119,17 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
             SliverAppBar(
               floating: true,
               snap: true,
+              automaticallyImplyLeading: false,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  } else {
+                    context.go(AppRoutes.home);
+                  }
+                },
+              ),
               title: const Text('Products'),
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(56),
@@ -205,8 +258,7 @@ class _FilterRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activeCategoryId =
-        productsAsync.valueOrNull?.categoryId;
+    final activeCategoryId = productsAsync.valueOrNull?.categoryId;
     final activeSort = productsAsync.valueOrNull?.sort;
 
     return SizedBox(
@@ -229,9 +281,8 @@ class _FilterRow extends ConsumerWidget {
           _CategoryChip(
             label: 'All',
             isSelected: activeCategoryId == null,
-            onTap: () => ref
-                .read(productsNotifierProvider.notifier)
-                .applyCategory(null),
+            onTap: () =>
+                ref.read(productsNotifierProvider.notifier).applyCategory(null),
           ),
           // Per-category chips
           ...categoriesAsync.whenOrNull(
@@ -290,8 +341,7 @@ class _CategoryChip extends StatelessWidget {
                 ? Colors.white
                 : Theme.of(context).colorScheme.onSurfaceVariant,
             fontSize: 12,
-            fontWeight:
-                isSelected ? FontWeight.w600 : FontWeight.w400,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
       ),
@@ -384,10 +434,13 @@ class _ProductGrid extends StatelessWidget {
             if (index == _rowCount(products.length)) {
               return isLoadingMore
                   ? const Padding(
-                      padding:
-                          EdgeInsets.symmetric(vertical: AppDimensions.spacingLg),
+                      padding: EdgeInsets.symmetric(
+                        vertical: AppDimensions.spacingLg,
+                      ),
                       child: Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
                       ),
                     )
                   : const SizedBox.shrink();
@@ -397,8 +450,7 @@ class _ProductGrid extends StatelessWidget {
             final left = index * 2;
             final right = left + 1;
             return Padding(
-              padding:
-                  const EdgeInsets.only(bottom: AppDimensions.spacingMd),
+              padding: const EdgeInsets.only(bottom: AppDimensions.spacingMd),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -406,7 +458,8 @@ class _ProductGrid extends StatelessWidget {
                     child: ProductCard(
                       product: products[left],
                       onTap: () => context.push(
-                          AppRoutes.productDetailPath(products[left].id),),
+                        AppRoutes.productDetailPath(products[left].id),
+                      ),
                     ),
                   ),
                   const SizedBox(width: AppDimensions.spacingMd),
@@ -415,7 +468,8 @@ class _ProductGrid extends StatelessWidget {
                         ? ProductCard(
                             product: products[right],
                             onTap: () => context.push(
-                                AppRoutes.productDetailPath(products[right].id),),
+                              AppRoutes.productDetailPath(products[right].id),
+                            ),
                           )
                         : const SizedBox.shrink(),
                   ),
@@ -456,8 +510,7 @@ class _EmptyView extends StatelessWidget {
             Text(
               'Try adjusting your search or filters',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color:
-                        Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
             ),
           ],

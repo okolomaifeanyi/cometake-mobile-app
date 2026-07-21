@@ -36,7 +36,7 @@ Product product({
       comparePrice: comparePrice,
       sku: 'SKU-1',
       images: images,
-      createdAt: DateTime(2024, 1, 1),
+      createdAt: DateTime(2024),
     );
 
 void main() {
@@ -58,15 +58,15 @@ void main() {
 
   group('CartItem.hasDiscount', () {
     test('no comparePrice → hasDiscount is false', () {
-      expect(item(price: 1000).hasDiscount, isFalse);
+      expect(item().hasDiscount, isFalse);
     });
 
     test('comparePrice == price → hasDiscount is false', () {
-      expect(item(price: 1000, comparePrice: 1000).hasDiscount, isFalse);
+      expect(item(comparePrice: 1000).hasDiscount, isFalse);
     });
 
     test('comparePrice < price → hasDiscount is false (inverted price)', () {
-      expect(item(price: 1000, comparePrice: 800).hasDiscount, isFalse);
+      expect(item(comparePrice: 800).hasDiscount, isFalse);
     });
 
     test('comparePrice > price → hasDiscount is true', () {
@@ -74,7 +74,7 @@ void main() {
     });
 
     test('comparePrice of 0 → hasDiscount is false', () {
-      expect(item(price: 1000, comparePrice: 0).hasDiscount, isFalse);
+      expect(item(comparePrice: 0).hasDiscount, isFalse);
     });
   });
 
@@ -123,7 +123,7 @@ void main() {
 
     test('multiple items: subtotals are summed', () {
       final cart = Cart(items: [
-        item(id: 'a', price: 1000),
+        item(id: 'a'),
         item(id: 'b', price: 500, quantity: 2),
       ],);
       expect(cart.subtotal, 2000.0);
@@ -142,15 +142,15 @@ void main() {
 
   group('Product.hasDiscount', () {
     test('no comparePrice → no discount', () {
-      expect(product(price: 1000).hasDiscount, isFalse);
+      expect(product().hasDiscount, isFalse);
     });
 
     test('comparePrice == price → no discount', () {
-      expect(product(price: 1000, comparePrice: 1000).hasDiscount, isFalse);
+      expect(product(comparePrice: 1000).hasDiscount, isFalse);
     });
 
     test('comparePrice less than price → no discount (bad data)', () {
-      expect(product(price: 1000, comparePrice: 800).hasDiscount, isFalse);
+      expect(product(comparePrice: 800).hasDiscount, isFalse);
     });
 
     test('comparePrice greater than price → has discount', () {
@@ -160,7 +160,7 @@ void main() {
 
   group('Product.discountPercent', () {
     test('no discount → 0%', () {
-      expect(product(price: 1000).discountPercent, 0);
+      expect(product().discountPercent, 0);
     });
 
     test('20% off: (1000 - 800) / 1000 * 100 = 20', () {

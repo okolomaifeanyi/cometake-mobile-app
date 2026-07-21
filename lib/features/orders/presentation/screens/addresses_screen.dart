@@ -31,10 +31,10 @@ class AddressesScreen extends ConsumerWidget {
                 children: [
                   Icon(Icons.location_off_outlined,
                       size: 64,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,),
                   const SizedBox(height: 16),
                   Text('No saved addresses',
-                      style: Theme.of(context).textTheme.titleMedium),
+                      style: Theme.of(context).textTheme.titleMedium,),
                   const SizedBox(height: 6),
                   Text(
                     'Add an address for faster checkout',
@@ -59,7 +59,7 @@ class AddressesScreen extends ConsumerWidget {
         backgroundColor: AppColors.figmaGreen,
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('Add Address',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),),
       ),
     );
   }
@@ -116,11 +116,11 @@ class _AddressTile extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.figmaGreen.withOpacity(0.12),
+              color: AppColors.figmaGreen.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.location_on_outlined,
-                color: AppColors.figmaGreen, size: 18),
+                color: AppColors.figmaGreen, size: 18,),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -139,7 +139,7 @@ class _AddressTile extends StatelessWidget {
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                            horizontal: 6, vertical: 2,),
                         decoration: BoxDecoration(
                           color: AppColors.figmaGreen,
                           borderRadius: BorderRadius.circular(6),
@@ -149,7 +149,7 @@ class _AddressTile extends StatelessWidget {
                           style: TextStyle(
                               color: Colors.white,
                               fontSize: 10,
-                              fontWeight: FontWeight.w700),
+                              fontWeight: FontWeight.w700,),
                         ),
                       ),
                     ],
@@ -158,12 +158,12 @@ class _AddressTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(address.phone,
                     style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant)),
+                        color: theme.colorScheme.onSurfaceVariant,),),
                 const SizedBox(height: 2),
                 Text(
                   address.summary,
                   style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant),
+                      color: theme.colorScheme.onSurfaceVariant,),
                 ),
               ],
             ),
@@ -208,7 +208,7 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
-          20, 20, 20, MediaQuery.viewInsetsOf(context).bottom + 20),
+          20, 20, 20, MediaQuery.viewInsetsOf(context).bottom + 20,),
       child: Form(
         key: _formKey,
         child: Column(
@@ -219,14 +219,14 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
                 style: Theme.of(context)
                     .textTheme
                     .titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700)),
+                    ?.copyWith(fontWeight: FontWeight.w700),),
             const SizedBox(height: 16),
             _Field(controller: _nameCtrl, label: 'Full Name'),
             const SizedBox(height: 10),
             _Field(
                 controller: _phoneCtrl,
                 label: 'Phone',
-                type: TextInputType.phone),
+                type: TextInputType.phone,),
             const SizedBox(height: 10),
             _Field(controller: _streetCtrl, label: 'Street Address'),
             const SizedBox(height: 10),
@@ -235,7 +235,7 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
                 Expanded(child: _Field(controller: _cityCtrl, label: 'City')),
                 const SizedBox(width: 10),
                 Expanded(
-                    child: _Field(controller: _stateCtrl, label: 'State')),
+                    child: _Field(controller: _stateCtrl, label: 'State'),),
               ],
             ),
             const SizedBox(height: 10),

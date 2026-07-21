@@ -12,10 +12,12 @@ class VendorDatasource {
   final Dio _dio;
   final SupabaseClient _client;
 
+  // Omit seller join — core_user has no SELECT RLS policy; the join kills the
+  // entire query even for authenticated users. Vendor doesn't need their own info.
   static const _productSelect =
       'id, name, description, price, compare_price, in_stock, unlist, created_at, '
+      'sku, category_id, seller_id, '
       'category:core_category!category_id(id, name), '
-      'seller:core_user!seller_id(id, first_name, last_name), '
       'cover:core_media!product_cover_image_id(media)';
 
   const VendorDatasource(this._dio, this._client);
@@ -109,7 +111,7 @@ class VendorDatasource {
           .eq('user_id', userId)
           .eq('status', 'ACTIVE');
       if ((rows as List).isEmpty) return null;
-      return VendorSubscription.fromJson(rows.first as Map<String, dynamic>);
+      return VendorSubscription.fromJson(rows.first);
     } catch (_) {
       return null;
     }

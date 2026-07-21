@@ -25,6 +25,15 @@ const _cdnBase =
 String _heroUrl(String name, bool isDark) =>
     '$_cdnBase$name-${isDark ? 'dark' : 'light'}.png';
 
+String _productsRoute({String? category, String? search, String? sort}) {
+  final params = <String, String>{
+    if (category != null) 'category': category,
+    if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+    if (sort != null && sort.trim().isNotEmpty) 'sort': sort.trim(),
+  };
+  return Uri(path: AppRoutes.products, queryParameters: params).toString();
+}
+
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 class HomeScreen extends ConsumerWidget {
@@ -58,23 +67,26 @@ class HomeScreen extends ConsumerWidget {
             SliverToBoxAdapter(child: _TopCategories(ref: ref)),
             SliverToBoxAdapter(child: _FeaturedStores()),
             SliverToBoxAdapter(
-                child: _ProductSection(
-              title: '🔥 Trending',
-              viewAllRoute: AppRoutes.products,
-              providerValue: ref.watch(trendingProductsProvider),
-            )),
+              child: _ProductSection(
+                title: '🔥 Trending',
+                viewAllRoute: _productsRoute(),
+                providerValue: ref.watch(trendingProductsProvider),
+              ),
+            ),
             SliverToBoxAdapter(
-                child: _ProductSection(
-              title: '✨ New Arrivals',
-              viewAllRoute: '${AppRoutes.products}?sort=newest',
-              providerValue: ref.watch(newArrivalsProvider),
-            )),
+              child: _ProductSection(
+                title: '✨ New Arrivals',
+                viewAllRoute: _productsRoute(sort: 'newest'),
+                providerValue: ref.watch(newArrivalsProvider),
+              ),
+            ),
             SliverToBoxAdapter(
-                child: _ProductSection(
-              title: '🏆 Best Selling',
-              viewAllRoute: AppRoutes.products,
-              providerValue: ref.watch(bestSellingProvider),
-            )),
+              child: _ProductSection(
+                title: '🏆 Best Selling',
+                viewAllRoute: _productsRoute(),
+                providerValue: ref.watch(bestSellingProvider),
+              ),
+            ),
             SliverToBoxAdapter(child: _RecommendedSection(ref: ref)),
             SliverToBoxAdapter(child: _SellBanner()),
             const SliverToBoxAdapter(
@@ -99,7 +111,8 @@ class _HomeAppBar extends ConsumerWidget {
 
     return Container(
       color: context.bg,
-      padding: EdgeInsets.fromLTRB(16, MediaQuery.viewPaddingOf(context).top + 8, 16, 12),
+      padding: EdgeInsets.fromLTRB(
+          16, MediaQuery.viewPaddingOf(context).top + 8, 16, 12,),
       child: Row(
         children: [
           Image.asset(
@@ -118,7 +131,7 @@ class _HomeAppBar extends ConsumerWidget {
             icon: Icons.shopping_cart_outlined,
             badge: cartCount > 0 ? '$cartCount' : null,
             badgeColor: AppColors.figmaGreen,
-            onTap: () => context.go(AppRoutes.cart),
+            onTap: () => context.push(AppRoutes.cart),
           ),
         ],
       ),
@@ -182,7 +195,7 @@ class _SearchBar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: GestureDetector(
-        onTap: () => context.go(AppRoutes.products),
+        onTap: () => context.push(_productsRoute()),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           decoration: BoxDecoration(
@@ -252,7 +265,7 @@ class _HeroSliderState extends State<_HeroSlider> {
         label: 'NEW ARRIVALS',
         title: 'Latest Tech.\nTop Deals.',
         subtitle: 'Discover the best gadgets\nat unbeatable prices.',
-        route: AppRoutes.products,
+        route: _productsRoute(search: 'tech'),
         isDark: widget.isDark,
       ),
       _SlideData(
@@ -260,7 +273,7 @@ class _HeroSliderState extends State<_HeroSlider> {
         label: 'FASHION PICKS',
         title: 'Style Meets\nAffordability.',
         subtitle: 'Shop the latest trends\nfrom top vendors.',
-        route: AppRoutes.products,
+        route: _productsRoute(search: 'fashion'),
         isDark: widget.isDark,
       ),
     ];
@@ -294,12 +307,15 @@ class _HeroSliderState extends State<_HeroSlider> {
                     },
                     child: Container(
                       padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.black38,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.chevron_left,
-                          color: Colors.white, size: 20),
+                      child: const Icon(
+                        Icons.chevron_left,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ),
@@ -319,12 +335,15 @@ class _HeroSliderState extends State<_HeroSlider> {
                     },
                     child: Container(
                       padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.black38,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.chevron_right,
-                          color: Colors.white, size: 20),
+                      child: const Icon(
+                        Icons.chevron_right,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ),
@@ -384,58 +403,30 @@ class _HeroSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        CachedNetworkImage(
-          imageUrl: _heroUrl(data.imageKey, data.isDark),
-          fit: BoxFit.contain,
-
-          errorWidget: (_, __, ___) => Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.figmaTeal, AppColors.figmaTealEnd],
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => context.push(data.route),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CachedNetworkImage(
+            imageUrl: _heroUrl(data.imageKey, data.isDark),
+            fit: BoxFit.contain,
+            errorWidget: (_, __, ___) => Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.figmaTeal, AppColors.figmaTealEnd],
+                ),
               ),
             ),
           ),
-        ),
-        // Shop Now button only — images already have text baked in
-        Positioned(
-          left: 20,
-          bottom: 28,
-          child: GestureDetector(
-            onTap: () => context.go(data.route),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.figmaGreen,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Shop Now',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(width: 4),
-                  Icon(Icons.chevron_right, color: Colors.white, size: 16),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
-
 
 // ─── Quick Access ─────────────────────────────────────────────────────────────
 
@@ -461,7 +452,7 @@ class _QuickAccess extends ConsumerWidget {
         end: AppColors.qGreenEnd,
         route: AppRoutes.wallet,
       ),
-      _QItem(
+      const _QItem(
         icon: Icons.smartphone,
         label: 'VTU',
         sub: 'Airtime & Data',
@@ -469,7 +460,7 @@ class _QuickAccess extends ConsumerWidget {
         end: AppColors.qBlueEnd,
         route: AppRoutes.vtu,
       ),
-      _QItem(
+      const _QItem(
         icon: Icons.chat_bubble_rounded,
         label: 'Chat',
         sub: 'Messages',
@@ -477,7 +468,7 @@ class _QuickAccess extends ConsumerWidget {
         end: AppColors.qPurpleEnd,
         route: AppRoutes.chat,
       ),
-      _QItem(
+      const _QItem(
         icon: Icons.store,
         label: 'Own a Store',
         sub: 'Start selling',
@@ -525,7 +516,7 @@ class _QCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.go(item.route),
+      onTap: () => context.push(item.route),
       child: Column(
         children: [
           Container(
@@ -636,16 +627,22 @@ class _FlashSalesState extends ConsumerState<_FlashSales> {
                   ),
                   const Spacer(),
                   GestureDetector(
-                    onTap: () => context.go(AppRoutes.products),
+                    onTap: () => context.push(_productsRoute()),
                     child: const Row(
                       children: [
-                        Text('View All',
-                            style: TextStyle(
-                                color: AppColors.figmaGreen,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600)),
-                        Icon(Icons.chevron_right,
-                            color: AppColors.figmaGreen, size: 16),
+                        Text(
+                          'View All',
+                          style: TextStyle(
+                            color: AppColors.figmaGreen,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          color: AppColors.figmaGreen,
+                          size: 16,
+                        ),
                       ],
                     ),
                   ),
@@ -660,16 +657,24 @@ class _FlashSalesState extends ConsumerState<_FlashSales> {
                   _CountdownBox(_pad(_remaining.inHours)),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(':',
-                        style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.w700)),
+                    child: Text(
+                      ':',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                   _CountdownBox(_pad(_remaining.inMinutes.remainder(60))),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(':',
-                        style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.w700)),
+                    child: Text(
+                      ':',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                   _CountdownBox(_pad(_remaining.inSeconds.remainder(60))),
                   const SizedBox(width: 8),
@@ -691,7 +696,7 @@ class _FlashSalesState extends ConsumerState<_FlashSales> {
                 itemBuilder: (_, i) => _FlashSaleCard(
                   product: items[i],
                   onTap: () =>
-                      context.go(AppRoutes.productDetailPath(items[i].id)),
+                      context.push(AppRoutes.productDetailPath(items[i].id)),
                 ),
               ),
             ),
@@ -770,7 +775,9 @@ class _FlashSaleCard extends StatelessWidget {
                     left: 8,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 3),
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.red,
                         borderRadius: BorderRadius.circular(4),
@@ -778,9 +785,10 @@ class _FlashSaleCard extends StatelessWidget {
                       child: Text(
                         '-${product.discountPercent}%',
                         style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700),
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
@@ -978,16 +986,22 @@ class _TopCategories extends ConsumerWidget {
                   ),
                   const Spacer(),
                   GestureDetector(
-                    onTap: () => context.go(AppRoutes.products),
+                    onTap: () => context.push(_productsRoute()),
                     child: const Row(
                       children: [
-                        Text('See All',
-                            style: TextStyle(
-                                color: AppColors.figmaGreen,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600)),
-                        Icon(Icons.chevron_right,
-                            color: AppColors.figmaGreen, size: 16),
+                        Text(
+                          'See All',
+                          style: TextStyle(
+                            color: AppColors.figmaGreen,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          color: AppColors.figmaGreen,
+                          size: 16,
+                        ),
                       ],
                     ),
                   ),
@@ -1012,8 +1026,8 @@ class _TopCategories extends ConsumerWidget {
                   final emoji = _emojiFor(cat.name);
 
                   return GestureDetector(
-                    onTap: () => context.go(
-                      '${AppRoutes.products}?category=${cat.id}',
+                    onTap: () => context.push(
+                      _productsRoute(category: cat.id),
                     ),
                     child: Column(
                       children: [
@@ -1039,7 +1053,9 @@ class _TopCategories extends ConsumerWidget {
                         Text(
                           cat.name,
                           style: TextStyle(
-                              color: context.t3, fontSize: 10),
+                            color: context.t3,
+                            fontSize: 10,
+                          ),
                           textAlign: TextAlign.center,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1062,16 +1078,41 @@ class _TopCategories extends ConsumerWidget {
 
 class _FeaturedStores extends StatelessWidget {
   static const _stores = [
-    _StoreData('TechHub Electronics', 'Electronics', 4.8, 'Top Rated',
-        [Color(0xFF3B82F6), Color(0xFF0891B2)]),
-    _StoreData('Fashion Forward NG', 'Fashion', 4.7, 'Verified',
-        [Color(0xFFEC4899), Color(0xFF9333EA)]),
-    _StoreData('HomeStyle Living', 'Home & Living', 4.6, 'Verified',
-        [Color(0xFFF97316), Color(0xFFD97706)]),
-    _StoreData('Gadget World', 'Electronics', 4.9, 'Top Rated',
-        [Color(0xFF22C55E), Color(0xFF059669)]),
-    _StoreData('Beauty Essentials', 'Beauty', 4.5, 'Verified',
-        [Color(0xFFEC4899), Color(0xFFF43F5E)]),
+    _StoreData(
+      'TechHub Electronics',
+      'Electronics',
+      4.8,
+      'Top Rated',
+      [Color(0xFF3B82F6), Color(0xFF0891B2)],
+    ),
+    _StoreData(
+      'Fashion Forward NG',
+      'Fashion',
+      4.7,
+      'Verified',
+      [Color(0xFFEC4899), Color(0xFF9333EA)],
+    ),
+    _StoreData(
+      'HomeStyle Living',
+      'Home & Living',
+      4.6,
+      'Verified',
+      [Color(0xFFF97316), Color(0xFFD97706)],
+    ),
+    _StoreData(
+      'Gadget World',
+      'Electronics',
+      4.9,
+      'Top Rated',
+      [Color(0xFF22C55E), Color(0xFF059669)],
+    ),
+    _StoreData(
+      'Beauty Essentials',
+      'Beauty',
+      4.5,
+      'Verified',
+      [Color(0xFFEC4899), Color(0xFFF43F5E)],
+    ),
   ];
 
   @override
@@ -1095,12 +1136,16 @@ class _FeaturedStores extends StatelessWidget {
               const Text(
                 'See All',
                 style: TextStyle(
-                    color: AppColors.figmaGreen,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600),
+                  color: AppColors.figmaGreen,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              const Icon(Icons.chevron_right,
-                  color: AppColors.figmaGreen, size: 16),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.figmaGreen,
+                size: 16,
+              ),
             ],
           ),
         ),
@@ -1128,7 +1173,12 @@ class _StoreData {
   final List<Color> gradient;
 
   const _StoreData(
-      this.name, this.category, this.rating, this.badge, this.gradient);
+    this.name,
+    this.category,
+    this.rating,
+    this.badge,
+    this.gradient,
+  );
 }
 
 class _StoreCard extends StatelessWidget {
@@ -1177,8 +1227,8 @@ class _StoreCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: store.badge == 'Top Rated'
-                      ? Colors.amber.withOpacity(0.2)
-                      : AppColors.figmaGreen.withOpacity(0.15),
+                      ? Colors.amber.withValues(alpha: 0.2)
+                      : AppColors.figmaGreen.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -1268,16 +1318,22 @@ class _ProductSection extends StatelessWidget {
                   ),
                   const Spacer(),
                   GestureDetector(
-                    onTap: () => context.go(viewAllRoute),
+                    onTap: () => context.push(viewAllRoute),
                     child: const Row(
                       children: [
-                        Text('View All',
-                            style: TextStyle(
-                                color: AppColors.figmaGreen,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600)),
-                        Icon(Icons.chevron_right,
-                            color: AppColors.figmaGreen, size: 16),
+                        Text(
+                          'View All',
+                          style: TextStyle(
+                            color: AppColors.figmaGreen,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          color: AppColors.figmaGreen,
+                          size: 16,
+                        ),
                       ],
                     ),
                   ),
@@ -1299,7 +1355,7 @@ class _ProductSection extends StatelessWidget {
                 itemBuilder: (_, i) => ProductCard(
                   product: products[i],
                   onTap: () =>
-                      context.go(AppRoutes.productDetailPath(products[i].id)),
+                      context.push(AppRoutes.productDetailPath(products[i].id)),
                 ),
               ),
             ),
@@ -1344,16 +1400,22 @@ class _RecommendedSection extends ConsumerWidget {
                   ),
                   const Spacer(),
                   GestureDetector(
-                    onTap: () => context.go(AppRoutes.products),
+                    onTap: () => context.push(_productsRoute()),
                     child: const Row(
                       children: [
-                        Text('See All',
-                            style: TextStyle(
-                                color: AppColors.figmaGreen,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600)),
-                        Icon(Icons.chevron_right,
-                            color: AppColors.figmaGreen, size: 16),
+                        Text(
+                          'See All',
+                          style: TextStyle(
+                            color: AppColors.figmaGreen,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          color: AppColors.figmaGreen,
+                          size: 16,
+                        ),
                       ],
                     ),
                   ),
@@ -1371,8 +1433,8 @@ class _RecommendedSection extends ConsumerWidget {
                   width: 160,
                   child: ProductCard(
                     product: products[i],
-                    onTap: () =>
-                        context.go(AppRoutes.productDetailPath(products[i].id)),
+                    onTap: () => context
+                        .push(AppRoutes.productDetailPath(products[i].id)),
                   ),
                 ),
               ),
@@ -1423,10 +1485,12 @@ class _SellBanner extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   GestureDetector(
-                    onTap: () => context.go(AppRoutes.vendor),
+                    onTap: () => context.push(AppRoutes.vendor),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.figmaGreen,
                         borderRadius: BorderRadius.circular(8),
@@ -1443,8 +1507,11 @@ class _SellBanner extends StatelessWidget {
                             ),
                           ),
                           SizedBox(width: 4),
-                          Icon(Icons.chevron_right,
-                              color: Colors.white, size: 16),
+                          Icon(
+                            Icons.chevron_right,
+                            color: Colors.white,
+                            size: 16,
+                          ),
                         ],
                       ),
                     ),

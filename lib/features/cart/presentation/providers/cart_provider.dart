@@ -23,9 +23,10 @@ final cartRepositoryProvider = Provider<CartRepository>(
 
 // ─── Notifier ────────────────────────────────────────────────────────────────
 
-final cartNotifierProvider =
-    AsyncNotifierProvider<CartNotifier, Cart>(CartNotifier.new,
-        name: 'cartNotifierProvider',);
+final cartNotifierProvider = AsyncNotifierProvider<CartNotifier, Cart>(
+  CartNotifier.new,
+  name: 'cartNotifierProvider',
+);
 
 // Convenient count badge
 final cartItemCountProvider = Provider<int>((ref) {
@@ -88,14 +89,19 @@ class CartNotifier extends AsyncNotifier<Cart> {
     }
   }
 
-  Future<void> clearCart() async {
+  Future<bool> clearCart() async {
     final uid = _userId;
-    if (uid == null) return;
+    if (uid == null) return false;
+    final previous = state.valueOrNull ?? const Cart();
+    state = const AsyncLoading();
     try {
       await ref.read(cartRepositoryProvider).clearCart(uid);
       state = const AsyncData(Cart());
+      return true;
     } on AppException catch (e) {
+      state = AsyncData(previous);
       state = AsyncError(ErrorHandler.handle(e), StackTrace.current);
+      return false;
     }
   }
 

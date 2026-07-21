@@ -40,7 +40,8 @@ class SupabaseWalletDatasource {
     }
   }
 
-  Future<List<WalletTransactionModel>> fetchTransactions(String walletId) async {
+  Future<List<WalletTransactionModel>> fetchTransactions(
+      String walletId,) async {
     try {
       if (walletId.isEmpty) return [];
       final rows = await _client
@@ -53,7 +54,8 @@ class SupabaseWalletDatasource {
           .limit(50);
 
       return (rows as List)
-          .map((r) => WalletTransactionModel.fromJson(r as Map<String, dynamic>))
+          .map(
+              (r) => WalletTransactionModel.fromJson(r as Map<String, dynamic>),)
           .toList();
     } catch (e) {
       if (e is AppException) rethrow;
@@ -65,6 +67,15 @@ class SupabaseWalletDatasource {
   /// Inserts a `payments` row so the verify route can find it later.
   Future<TopupResultModel> initiateTopup(double amount) async {
     try {
+      var session = _client.auth.currentSession;
+      if (session == null) {
+        final refreshed = await _client.auth.refreshSession();
+        session = refreshed.session;
+      }
+      if (session == null) {
+        throw const AuthException('Not authenticated');
+      }
+
       final resp = await _dio.post<Map<String, dynamic>>(
         '/api/v1/wallet/topup',
         data: {'amount': amount},
@@ -72,7 +83,8 @@ class SupabaseWalletDatasource {
       final data = resp.data!;
       return TopupResultModel.fromJson(data);
     } on DioException catch (e) {
-      final msg = (e.response?.data as Map?)?['error'] ?? e.message ?? 'Top-up failed';
+      final msg =
+          (e.response?.data as Map?)?['error'] ?? e.message ?? 'Top-up failed';
       throw ServerException(msg.toString(), statusCode: e.response?.statusCode);
     } catch (e) {
       if (e is AppException) rethrow;
@@ -101,7 +113,8 @@ class SupabaseWalletDatasource {
           );
         case 'pending':
           return VerifyPending(
-            retryAfterSeconds: (data['retryAfterSeconds'] as num?)?.toInt() ?? 4,
+            retryAfterSeconds:
+                (data['retryAfterSeconds'] as num?)?.toInt() ?? 4,
           );
         default:
           return VerifyFailed(
@@ -111,7 +124,8 @@ class SupabaseWalletDatasource {
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
       if (statusCode == 401) {
-        return const VerifyError('Session expired — please log in again', isUnauthorized: true);
+        return const VerifyError('Session expired — please log in again',
+            isUnauthorized: true,);
       }
       if (statusCode == 404) {
         return const VerifyFailed('Payment record not found');
@@ -119,7 +133,9 @@ class SupabaseWalletDatasource {
       final isNetwork = e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout;
-      final msg = (e.response?.data as Map?)?['error'] ?? e.message ?? 'Verification failed';
+      final msg = (e.response?.data as Map?)?['error'] ??
+          e.message ??
+          'Verification failed';
       return VerifyError(msg.toString(), isNetwork: isNetwork);
     } catch (e) {
       return VerifyError(e.toString());

@@ -190,8 +190,8 @@ class _StepBtn extends StatelessWidget {
 class _PlaceholderBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
-        color: AppColors.primary.withOpacity(0.06),
+        color: AppColors.primary.withValues(alpha: 0.06),
         child: Icon(Icons.image_outlined,
-            size: 24, color: AppColors.primary.withOpacity(0.3),),
+            size: 24, color: AppColors.primary.withValues(alpha: 0.3),),
       );
 }

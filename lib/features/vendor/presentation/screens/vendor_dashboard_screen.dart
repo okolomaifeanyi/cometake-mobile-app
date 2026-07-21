@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -105,7 +107,7 @@ class _ProductTile extends ConsumerWidget {
                   fit: BoxFit.cover,
                 )
               : Container(
-                  color: AppColors.primary.withOpacity(0.08),
+                  color: AppColors.primary.withValues(alpha: 0.08),
                   child: const Icon(Icons.image_outlined,
                       color: AppColors.primary, size: 24,),
                 ),
@@ -136,7 +138,10 @@ class _ProductTile extends ConsumerWidget {
       trailing: PopupMenuButton<String>(
         onSelected: (action) async {
           if (action == 'edit') {
-            context.push(AppRoutes.vendorEditProductPath(product.id));
+            unawaited(context.push(
+              AppRoutes.vendorEditProductPath(product.id),
+              extra: product,
+            ),);
           } else if (action == 'delete') {
             final confirmed = await showDialog<bool>(
               context: context,
@@ -178,7 +183,7 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
         ),
         child: Text(label,

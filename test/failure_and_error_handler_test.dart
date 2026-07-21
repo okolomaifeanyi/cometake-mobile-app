@@ -287,7 +287,7 @@ void main() {
   // ── _extractMessage (via DioException round-trip) ─────────────────────────
 
   group('_extractMessage', () {
-    DioException _bad(int status, dynamic data) => DioException(
+    DioException bad(int status, dynamic data) => DioException(
           requestOptions: RequestOptions(),
           type: DioExceptionType.badResponse,
           response: Response(
@@ -298,28 +298,28 @@ void main() {
         );
 
     test('reads "message" key from Map response body', () {
-      final f = ErrorHandler.handle(_bad(422, {'message': 'Name required'}));
+      final f = ErrorHandler.handle(bad(422, {'message': 'Name required'}));
       expect(f.displayMessage, 'Name required');
     });
 
     test('reads "error" key when "message" absent', () {
-      final f = ErrorHandler.handle(_bad(422, {'error': 'Bad input'}));
+      final f = ErrorHandler.handle(bad(422, {'error': 'Bad input'}));
       expect(f.displayMessage, 'Bad input');
     });
 
     test('reads "detail" key as last resort', () {
-      final f = ErrorHandler.handle(_bad(422, {'detail': 'Detail message'}));
+      final f = ErrorHandler.handle(bad(422, {'detail': 'Detail message'}));
       expect(f.displayMessage, 'Detail message');
     });
 
     test('returns "Server error" fallback for non-Map response body', () {
-      final f = ErrorHandler.handle(_bad(500, 'plain string error'));
+      final f = ErrorHandler.handle(bad(500, 'plain string error'));
       expect(f, isA<ServerFailure>());
       expect(f.displayMessage, 'Server error');
     });
 
     test('returns "Server error" fallback for null response body', () {
-      final f = ErrorHandler.handle(_bad(500, null));
+      final f = ErrorHandler.handle(bad(500, null));
       expect(f, isA<ServerFailure>());
       expect(f.displayMessage, 'Server error');
     });

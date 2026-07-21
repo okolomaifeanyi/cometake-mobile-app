@@ -369,7 +369,7 @@ class _AvatarPreview extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: AppColors.primary.withOpacity(0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
         border: Border.all(
           color: Theme.of(context).colorScheme.outlineVariant,
           width: 2,
@@ -384,11 +384,11 @@ class _PlaceholderIcon extends StatelessWidget {
   const _PlaceholderIcon();
   @override
   Widget build(BuildContext context) => Container(
-        color: AppColors.primary.withOpacity(0.08),
+        color: AppColors.primary.withValues(alpha: 0.08),
         child: Icon(
           Icons.person_outline,
           size: 48,
-          color: AppColors.primary.withOpacity(0.6),
+          color: AppColors.primary.withValues(alpha: 0.6),
         ),
       );
 }

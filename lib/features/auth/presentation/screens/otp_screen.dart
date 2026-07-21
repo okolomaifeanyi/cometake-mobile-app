@@ -9,7 +9,6 @@ import '../../../../core/errors/app_exception.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
-import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../providers/auth_notifier.dart';
 
@@ -153,7 +152,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -215,7 +214,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                     hintText: '------',
                     hintStyle: textTheme.headlineMedium?.copyWith(
                       letterSpacing: 12,
-                      color: colorScheme.onSurface.withOpacity(0.3),
+                      color: colorScheme.onSurface.withValues(alpha: 0.3),
                     ),
                     counterText: '',
                     contentPadding: const EdgeInsets.symmetric(

@@ -62,7 +62,7 @@ class BecomeSellerScreen extends ConsumerWidget {
                       Text(
                         'Reach millions of customers on Cometake',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.85),
+                          color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 13,
                         ),
                       ),
@@ -201,13 +201,13 @@ class _PlanCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isPopular
-              ? colors[0].withOpacity(0.6)
+              ? colors[0].withValues(alpha: 0.6)
               : theme.colorScheme.outlineVariant,
           width: isPopular ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: colors[0].withOpacity(0.08),
+            color: colors[0].withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -233,7 +233,7 @@ class _PlanCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: Colors.white, size: 24),
@@ -257,9 +257,9 @@ class _PlanCard extends StatelessWidget {
                             const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
+                                  horizontal: 8, vertical: 2,),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.25),
+                                color: Colors.white.withValues(alpha: 0.25),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Text(
@@ -278,7 +278,7 @@ class _PlanCard extends StatelessWidget {
                         Text(
                           plan.description!,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 12,
                           ),
                         ),
@@ -299,7 +299,7 @@ class _PlanCard extends StatelessWidget {
                     Text(
                       '/month',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.75),
+                        color: Colors.white.withValues(alpha: 0.75),
                         fontSize: 11,
                       ),
                     ),
@@ -325,7 +325,7 @@ class _PlanCard extends StatelessWidget {
                   ),
                 ...plan.features.map(
                   (f) => _Feature(icon: Icons.check_circle_outline_rounded,
-                      text: f, color: colors[0]),
+                      text: f, color: colors[0],),
                 ),
               ],
             ),

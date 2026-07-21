@@ -36,8 +36,8 @@ class CloudinaryService {
       final signature = data['signature'] as String;
       final timestamp = data['timestamp'] as int;
       final apiKey = data['api_key'] as String;
-      final cloudName =
-          data['cloud_name'] as String? ?? RemoteConfig.instance.cloudinaryCloudName;
+      final cloudName = data['cloud_name'] as String? ??
+          RemoteConfig.instance.cloudinaryCloudName;
 
       // 2. Upload directly to Cloudinary
       final formData = FormData.fromMap({
@@ -73,20 +73,60 @@ class CloudinaryService {
     String crop = 'fill',
     String gravity = 'auto',
   }) {
-    if (!url.contains('cloudinary.com')) return url;
-    return url.replaceFirst(
+    final resolved = _resolveImageUrl(url);
+    if (!resolved.contains('cloudinary.com')) return resolved;
+    if (resolved.contains('/image/upload/')) return resolved;
+    return resolved.replaceFirst(
       '/upload/',
       '/upload/f_auto,q_auto,w_$width,c_$crop,g_$gravity/',
     );
   }
 
   static String thumbnail(String url, {int size = 100}) {
-    if (!url.contains('cloudinary.com')) return url;
-    return url.replaceFirst(
+    final resolved = _resolveImageUrl(url);
+    if (!resolved.contains('cloudinary.com')) return resolved;
+    if (resolved.contains('/image/upload/')) return resolved;
+    return resolved.replaceFirst(
       '/upload/',
       '/upload/f_auto,q_auto,w_$size,h_$size,c_fill,g_auto/',
     );
   }
 
   static String banner(String url) => optimized(url, width: 800);
+
+  // Normalizes legacy/supabase object paths into a Cloudinary delivery URL.
+  static String _resolveImageUrl(String raw) {
+    final normalized = raw.trim();
+    if (normalized.isEmpty) return normalized;
+
+    final supabasePublicObject = RegExp(
+      r'^https?://[^/]+/storage/v1/object/public/(.+)$',
+      caseSensitive: false,
+    );
+    final match = supabasePublicObject.firstMatch(normalized);
+    if (match != null) {
+      final objectPath = match.group(1) ?? '';
+      if (objectPath.isNotEmpty) {
+        final withoutExt = objectPath
+            .replaceFirst(RegExp(r'^/+'), '')
+            .replaceAll(RegExp(r'\.[^/.]+$'), '');
+        return _cloudinaryBase(withoutExt);
+      }
+    }
+
+    if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+      return normalized;
+    }
+
+    final clean = normalized.replaceFirst(RegExp(r'^/+'), '');
+    final withoutExt = clean.replaceAll(RegExp(r'\.[^/.]+$'), '');
+    return _cloudinaryBase(withoutExt);
+  }
+
+  static String _cloudinaryBase(String pathWithoutExt) {
+    final cloud = RemoteConfig.instance.cloudinaryCloudName.isNotEmpty
+        ? RemoteConfig.instance.cloudinaryCloudName
+        : 'dxi9khzro';
+    return 'https://res.cloudinary.com/$cloud/image/upload/$pathWithoutExt';
+  }
 }

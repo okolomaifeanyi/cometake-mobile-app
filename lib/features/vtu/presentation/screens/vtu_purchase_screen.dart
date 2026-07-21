@@ -172,12 +172,15 @@ class _VtuPurchaseScreenState extends ConsumerState<VtuPurchaseScreen> {
                     Row(
                       children: ['prepaid', 'postpaid'].map((t) {
                         return Expanded(
+                          // ignore: deprecated_member_use — RadioListTile.groupValue/onChanged
+                          // deprecated in Flutter 3.32 in favour of RadioGroup; migration
+                          // deferred to post-launch to avoid pre-release scope creep.
                           child: RadioListTile<String>(
                             title: Text(t[0].toUpperCase() + t.substring(1),
                                 style: const TextStyle(fontSize: 13),),
                             value: t,
-                            groupValue: _meterType,
-                            onChanged: (v) => setState(() {
+                            groupValue: _meterType, // ignore: deprecated_member_use
+                            onChanged: (v) => setState(() { // ignore: deprecated_member_use
                               _meterType = v;
                               _meterVerified = false;
                             }),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -38,7 +40,6 @@ class PaystackWebViewPage extends StatefulWidget {
 
 class _PaystackWebViewPageState extends State<PaystackWebViewPage>
     with WidgetsBindingObserver {
-  InAppWebViewController? _controller;
   bool _loading = true;
   bool _externalLaunched = false;
   // Guards all pop paths — prevents double-pop if the manual button and the
@@ -52,9 +53,8 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
   // browser. No MIXED_CONTENT_ALWAYS_ALLOW — enable only if testing proves
   // it's required.
   static final _settings = InAppWebViewSettings(
-    javaScriptEnabled: true,
-    domStorageEnabled: true,
-    thirdPartyCookiesEnabled: true,
+    // ignore: avoid_redundant_argument_values — without this flag the
+    // shouldOverrideUrlLoading callback never fires, breaking deep-link detection.
     useShouldOverrideUrlLoading: true,
   );
 
@@ -109,8 +109,7 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
               url: WebUri(widget.authorizationUrl),
             ),
             initialSettings: _settings,
-            onWebViewCreated: (controller) {
-              _controller = controller;
+            onWebViewCreated: (_) {
               debugPrint('[Paystack] WebView created');
             },
             onLoadStart: (controller, url) {
@@ -143,10 +142,12 @@ class _PaystackWebViewPageState extends State<PaystackWebViewPage>
               // ── Path B: deep link (btravel://, opay://, etc.) ────────────
               if (scheme != 'http' && scheme != 'https') {
                 debugPrint('[Paystack] Deep link → launching externally: $uri');
-                launchUrl(
-                  Uri.parse(uri.toString()),
-                  mode: LaunchMode.externalApplication,
-                ).catchError((_) => false);
+                unawaited(
+                  launchUrl(
+                    Uri.parse(uri.toString()),
+                    mode: LaunchMode.externalApplication,
+                  ).catchError((_) => false),
+                );
                 if (mounted) setState(() => _externalLaunched = true);
                 return NavigationActionPolicy.CANCEL;
               }

@@ -15,7 +15,26 @@ class AuthInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    final session = _client.auth.currentSession;
+    Session? session = _client.auth.currentSession;
+
+    // Ensure we always send a valid token for protected backend routes.
+    final expiresAt = session?.expiresAt;
+    final isExpired = expiresAt != null
+        ? DateTime.now().isAfter(
+            DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000)
+                .subtract(const Duration(seconds: 30)),
+          )
+        : false;
+
+    if (session == null || isExpired) {
+      try {
+        final refreshed = await _client.auth.refreshSession();
+        session = refreshed.session;
+      } catch (_) {
+        // Fall through with current session (if any). 401 handler can still retry.
+      }
+    }
+
     if (session != null) {
       options.headers['Authorization'] = 'Bearer ${session.accessToken}';
     }
@@ -46,7 +65,9 @@ class AuthInterceptor extends Interceptor {
     try {
       final res = await _client.auth.refreshSession();
       final newToken = res.session?.accessToken;
-      if (newToken == null) throw Exception('refreshSession returned no session');
+      if (newToken == null) {
+        throw Exception('refreshSession returned no session');
+      }
 
       handler.resolve(await _retry(err.requestOptions, newToken));
 

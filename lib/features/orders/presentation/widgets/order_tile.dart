@@ -4,7 +4,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/enums/order_status.dart';
-import '../../../../shared/enums/payment_status.dart';
 import '../../domain/entities/order.dart';
 
 class OrderTile extends StatelessWidget {
@@ -101,7 +100,7 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
       ),
       child: Text(

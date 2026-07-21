@@ -229,7 +229,7 @@ void main() {
         id: 'ord-1',
         orderNumber: 'ORD-001',
         total: 0,
-        createdAt: DateTime(2024, 1, 1),
+        createdAt: DateTime(2024),
       );
       expect(o.itemCount, 0);
     });
@@ -239,7 +239,7 @@ void main() {
         id: 'ord-1',
         orderNumber: 'ORD-001',
         total: 1000,
-        createdAt: DateTime(2024, 1, 1),
+        createdAt: DateTime(2024),
         items: const [
           OrderItem(id: 'i1', quantity: 1, price: 1000, total: 1000),
         ],
@@ -252,7 +252,7 @@ void main() {
         id: 'ord-1',
         orderNumber: 'ORD-001',
         total: 5000,
-        createdAt: DateTime(2024, 1, 1),
+        createdAt: DateTime(2024),
         items: const [
           OrderItem(id: 'i1', quantity: 2, price: 1000, total: 2000),
           OrderItem(id: 'i2', quantity: 3, price: 1000, total: 3000),
@@ -345,7 +345,7 @@ void main() {
           balanceAfter: 1000,
           description: 'Test',
           reference: 'REF-1',
-          createdAt: DateTime(2024, 1, 1),
+          createdAt: DateTime(2024),
         );
 
     test('credit type → isCredit is true', () {

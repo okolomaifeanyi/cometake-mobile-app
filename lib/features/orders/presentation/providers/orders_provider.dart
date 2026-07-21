@@ -2,12 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_handler.dart';
+import '../../../cart/presentation/providers/cart_provider.dart';
 import '../../data/datasources/supabase_orders_datasource.dart';
 import '../../data/models/checkout_result_model.dart';
 import '../../data/repositories/orders_repository_impl.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/repositories/orders_repository.dart';
-import '../../../cart/presentation/providers/cart_provider.dart';
 
 // ─── DI ──────────────────────────────────────────────────────────────────────
 

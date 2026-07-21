@@ -1,5 +1,5 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_handler.dart';
@@ -19,8 +19,7 @@ final productsDatasourceProvider = Provider<SupabaseProductsDatasource>(
 );
 
 final productsRepositoryProvider = Provider<ProductsRepository>(
-  (ref) =>
-      ProductsRepositoryImpl(ref.watch(productsDatasourceProvider)),
+  (ref) => ProductsRepositoryImpl(ref.watch(productsDatasourceProvider)),
   name: 'productsRepositoryProvider',
 );
 
@@ -48,8 +47,6 @@ final productsNotifierProvider =
 );
 
 class ProductsNotifier extends AsyncNotifier<ProductsState> {
-  static const _limit = 20;
-
   @override
   Future<ProductsState> build() => _fetch(const ProductsState());
 
@@ -80,12 +77,14 @@ class ProductsNotifier extends AsyncNotifier<ProductsState> {
             categoryId: current.categoryId,
             sort: current.sort,
           );
-      state = AsyncData(current.copyWith(
-        products: [...current.products, ...result.products],
-        hasMore: result.hasMore,
-        page: nextPage,
-        isLoadingMore: false,
-      ),);
+      state = AsyncData(
+        current.copyWith(
+          products: [...current.products, ...result.products],
+          hasMore: result.hasMore,
+          page: nextPage,
+          isLoadingMore: false,
+        ),
+      );
     } on AppException catch (e) {
       state = AsyncData(current.copyWith(isLoadingMore: false));
       // Surface error without discarding list
@@ -99,7 +98,8 @@ class ProductsNotifier extends AsyncNotifier<ProductsState> {
     final current = state.valueOrNull ?? const ProductsState();
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => _fetch(current.copyWith(page: 1, products: [], isLoadingMore: false)),
+      () =>
+          _fetch(current.copyWith(page: 1, products: [], isLoadingMore: false)),
     );
   }
 
@@ -110,12 +110,14 @@ class ProductsNotifier extends AsyncNotifier<ProductsState> {
     if (newSearch == current.search) return;
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => _fetch(current.copyWith(
-        page: 1,
-        products: [],
-        search: newSearch,
-        isLoadingMore: false,
-      ),),
+      () => _fetch(
+        current.copyWith(
+          page: 1,
+          products: [],
+          search: newSearch,
+          isLoadingMore: false,
+        ),
+      ),
     );
   }
 
@@ -124,12 +126,14 @@ class ProductsNotifier extends AsyncNotifier<ProductsState> {
     if (categoryId == current.categoryId) return;
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => _fetch(current.copyWith(
-        page: 1,
-        products: [],
-        categoryId: categoryId,
-        isLoadingMore: false,
-      ),),
+      () => _fetch(
+        current.copyWith(
+          page: 1,
+          products: [],
+          categoryId: categoryId,
+          isLoadingMore: false,
+        ),
+      ),
     );
   }
 
@@ -138,20 +142,56 @@ class ProductsNotifier extends AsyncNotifier<ProductsState> {
     if (sort == current.sort) return;
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => _fetch(current.copyWith(
-        page: 1,
-        products: [],
-        sort: sort,
-        isLoadingMore: false,
-      ),),
+      () => _fetch(
+        current.copyWith(
+          page: 1,
+          products: [],
+          sort: sort,
+          isLoadingMore: false,
+        ),
+      ),
+    );
+  }
+
+  Future<void> applyRouteFilters({
+    String? categoryId,
+    String? search,
+    String? sort,
+  }) async {
+    final current = state.valueOrNull ?? const ProductsState();
+    final normalizedCategory =
+        (categoryId != null && categoryId.isNotEmpty) ? categoryId : null;
+    final normalizedSearch =
+        (search != null && search.trim().isNotEmpty) ? search.trim() : null;
+    final normalizedSort =
+        (sort != null && sort.trim().isNotEmpty) ? sort.trim() : null;
+
+    if (normalizedCategory == current.categoryId &&
+        normalizedSearch == current.search &&
+        normalizedSort == current.sort) {
+      return;
+    }
+
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => _fetch(
+        current.copyWith(
+          page: 1,
+          products: [],
+          categoryId: normalizedCategory,
+          search: normalizedSearch,
+          sort: normalizedSort,
+          isLoadingMore: false,
+        ),
+      ),
     );
   }
 }
 
 // ─── Product detail provider ──────────────────────────────────────────────────
 
-final productDetailProvider =
-    AsyncNotifierProvider.autoDispose.family<ProductDetailNotifier, Product, String>(
+final productDetailProvider = AsyncNotifierProvider.autoDispose
+    .family<ProductDetailNotifier, Product, String>(
   ProductDetailNotifier.new,
   name: 'productDetailProvider',
 );
@@ -165,7 +205,9 @@ class ProductDetailNotifier
 
 // ─── Categories provider ──────────────────────────────────────────────────────
 
-final categoriesProvider =
-    FutureProvider.autoDispose<List<ProductCategory>>((ref) {
-  return ref.watch(productsRepositoryProvider).getCategories();
-}, name: 'categoriesProvider',);
+final categoriesProvider = FutureProvider.autoDispose<List<ProductCategory>>(
+  (ref) {
+    return ref.watch(productsRepositoryProvider).getCategories();
+  },
+  name: 'categoriesProvider',
+);

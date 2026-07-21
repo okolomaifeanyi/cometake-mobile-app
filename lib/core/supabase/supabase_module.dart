@@ -13,7 +13,7 @@ abstract final class SupabaseModule {
     final cfg = RemoteConfig.instance;
     await Supabase.initialize(
       url: cfg.supabaseUrl,
-      anonKey: cfg.supabaseAnonKey,
+      publishableKey: cfg.supabaseAnonKey,
     );
   }
 }

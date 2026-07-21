@@ -1,8 +1,12 @@
+import 'dart:async';
 import 'dart:ui';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'firebase_options.dart';
 
 import 'core/config/remote_config.dart';
 import 'core/router/app_router.dart';
@@ -11,28 +15,59 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  runZonedGuarded<Future<void>>(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // Catch Flutter framework errors (widget build errors, layout overflows, etc.)
-  FlutterError.onError = (FlutterErrorDetails details) {
-    FlutterError.presentError(details);
-    // TODO: forward to Sentry / Firebase Crashlytics in production
-  };
+    var crashlyticsReady = false;
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      crashlyticsReady = true;
+    } catch (e, stack) {
+      // Never block first paint on telemetry setup failures.
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: e,
+          stack: stack,
+          informationCollector: () sync* {
+            yield ErrorDescription('Firebase initialization failed at startup');
+          },
+        ),
+      );
+    }
 
-  // Catch uncaught async errors that Flutter doesn't intercept via onError above
-  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
-    // TODO: forward to Sentry / Firebase Crashlytics in production
-    return true; // returning true marks the error as handled
-  };
+    // Catch Flutter framework errors (widget build errors, layout overflows, etc.)
+    FlutterError.onError = (FlutterErrorDetails details) {
+      FlutterError.presentError(details);
+      if (crashlyticsReady) {
+        FirebaseCrashlytics.instance.recordFlutterError(details);
+      }
+    };
 
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+    // Catch uncaught async errors that Flutter doesn't intercept via onError above
+    PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+      if (crashlyticsReady) {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      }
+      return true; // returning true marks the error as handled
+    };
 
-  // Show the app shell immediately so the screen is never blank.
-  // RemoteConfig + Supabase init happens inside _AppLoader below.
-  runApp(const ProviderScope(child: _AppLoader()));
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
+    // Show the app shell immediately so the screen is never blank.
+    // RemoteConfig + Supabase init happens inside _AppLoader below.
+    runApp(const ProviderScope(child: _AppLoader()));
+  }, (error, stack) {
+    // Catches errors that occur outside the Flutter framework's error zone
+    // (e.g. errors thrown before Firebase/Crashlytics is ready).
+    if (Firebase.apps.isNotEmpty) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    }
+  });
 }
 
 // ─── Bootstrap widget ──────────────────────────────────────────────────────────
@@ -81,17 +116,20 @@ class _AppLoaderState extends State<_AppLoader> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey),
+                      const Icon(Icons.wifi_off_rounded,
+                          size: 48, color: Colors.grey,),
                       const SizedBox(height: 16),
                       const Text(
                         'Could not connect to server',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600,),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         _error!,
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.grey),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 24),

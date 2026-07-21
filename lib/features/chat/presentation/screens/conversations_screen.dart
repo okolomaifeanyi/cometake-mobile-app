@@ -34,7 +34,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
           _ChatAppBar(),
           _TabRow(
               activeTab: _activeTab,
-              onTabTap: (i) => setState(() => _activeTab = i)),
+              onTabTap: (i) => setState(() => _activeTab = i),),
           _SecureBanner(),
           Expanded(
             child: roomsAsync.when(
@@ -259,9 +259,9 @@ class _RoomTile extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: avatarColor.withOpacity(0.2),
+                    color: avatarColor.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
-                    border: Border.all(color: avatarColor.withOpacity(0.4)),
+                    border: Border.all(color: avatarColor.withValues(alpha: 0.4)),
                   ),
                   child: Center(
                     child: Text(
@@ -315,7 +315,7 @@ class _RoomTile extends StatelessWidget {
                       // Verified tick when talking to admin/vendor
                       if (other?.role.toUpperCase() != 'CUSTOMER')
                         const Icon(Icons.verified,
-                            color: AppColors.figmaGreen, size: 14),
+                            color: AppColors.figmaGreen, size: 14,),
                     ],
                   ),
                   const SizedBox(height: 2),

@@ -67,7 +67,6 @@ class _OrderPaymentScreenState extends ConsumerState<OrderPaymentScreen>
   // thirdPartyCookiesEnabled: required by Paystack's cookie-support test page.
   // useShouldOverrideUrlLoading: must be true to receive the callback in shouldOverrideUrlLoading.
   static final _webSettings = InAppWebViewSettings(
-    thirdPartyCookiesEnabled:    true,
     useShouldOverrideUrlLoading: true,
   );
 
@@ -275,10 +274,12 @@ class _OrderPaymentScreenState extends ConsumerState<OrderPaymentScreen>
             // ── Non-HTTP scheme: external app (bank, OPay, etc.) ───────────
             if (scheme != 'http' && scheme != 'https') {
               debugPrint('[OrderPayment] deep link → external: $uri');
-              launchUrl(
-                Uri.parse(uri.toString()),
-                mode: LaunchMode.externalApplication,
-              ).catchError((_) => false);
+              unawaited(
+                launchUrl(
+                  Uri.parse(uri.toString()),
+                  mode: LaunchMode.externalApplication,
+                ).catchError((_) => false),
+              );
               if (mounted) setState(() => _externalLaunched = true);
               return NavigationActionPolicy.CANCEL;
             }

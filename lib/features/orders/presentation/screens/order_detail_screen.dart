@@ -157,7 +157,7 @@ class _OrderItemRow extends StatelessWidget {
                       fit: BoxFit.cover,
                     )
                   : Container(
-                      color: AppColors.primary.withOpacity(0.06),
+                      color: AppColors.primary.withValues(alpha: 0.06),
                       child: const Icon(Icons.image_outlined, size: 24),),
             ),
           ),
@@ -228,7 +228,7 @@ class _StatusChipWidget extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.12),
+          color: color.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
         ),
         child: Text(

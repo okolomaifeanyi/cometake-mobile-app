@@ -1,10 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../../cart/presentation/providers/cart_provider.dart';
-import '../../../wishlist/presentation/providers/wishlist_provider.dart';
-
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/services/cloudinary_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -12,6 +12,8 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_error_widget.dart';
 import '../../../../shared/widgets/app_loading.dart';
+import '../../../cart/presentation/providers/cart_provider.dart';
+import '../../../wishlist/presentation/providers/wishlist_provider.dart';
 import '../../domain/entities/product.dart';
 import '../providers/products_provider.dart';
 
@@ -91,10 +93,8 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
                     images: product.images,
                     productId: product.id,
                     currentIndex: _currentImage,
-                    onPageChanged: (i) =>
-                        setState(() => _currentImage = i),
+                    onPageChanged: (i) => setState(() => _currentImage = i),
                   ),
-
                   Padding(
                     padding: const EdgeInsets.all(AppDimensions.screenPaddingH),
                     child: Column(
@@ -122,7 +122,8 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
                               ),
                               const SizedBox(width: AppDimensions.spacingSm),
                               _DiscountBadge(
-                                  percent: product.discountPercent,),
+                                percent: product.discountPercent,
+                              ),
                             ],
                           ],
                         ),
@@ -197,7 +198,8 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
                             const SizedBox(height: AppDimensions.spacingXs),
                             GestureDetector(
                               onTap: () => setState(
-                                  () => _descExpanded = !_descExpanded,),
+                                () => _descExpanded = !_descExpanded,
+                              ),
                               child: Text(
                                 _descExpanded ? 'Show less' : 'Read more',
                                 style: const TextStyle(
@@ -226,14 +228,14 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
                             spacing: AppDimensions.spacingXs,
                             runSpacing: AppDimensions.spacingXs,
                             children: product.tags
-                                .map((t) => Chip(
-                                      label: Text(t),
-                                      labelStyle:
-                                          theme.textTheme.labelSmall,
-                                      visualDensity:
-                                          VisualDensity.compact,
-                                      padding: EdgeInsets.zero,
-                                    ),)
+                                .map(
+                                  (t) => Chip(
+                                    label: Text(t),
+                                    labelStyle: theme.textTheme.labelSmall,
+                                    visualDensity: VisualDensity.compact,
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                )
                                 .toList(),
                           ),
                           const SizedBox(height: AppDimensions.spacingMd),
@@ -288,12 +290,12 @@ class _ImageCarousel extends StatelessWidget {
       return SizedBox(
         height: height,
         child: Container(
-          color: AppColors.primary.withOpacity(0.06),
+          color: AppColors.primary.withValues(alpha: 0.06),
           child: Center(
             child: Icon(
               Icons.image_outlined,
               size: 80,
-              color: AppColors.primary.withOpacity(0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
             ),
           ),
         ),
@@ -307,24 +309,42 @@ class _ImageCarousel extends StatelessWidget {
           child: PageView.builder(
             onPageChanged: onPageChanged,
             itemCount: images.length,
-            itemBuilder: (_, i) => Hero(
-              tag: i == 0 ? 'product-$productId' : 'product-$productId-$i',
-              child: CachedNetworkImage(
-                imageUrl: CloudinaryService.optimized(
-                  images[i],
-                  width: MediaQuery.sizeOf(context).width.toInt(),
-                  crop: 'limit',
+            itemBuilder: (_, i) {
+              final rawImage = images[i];
+              final imageUrl = CloudinaryService.optimized(
+                rawImage,
+                width: MediaQuery.sizeOf(context).width.toInt(),
+                crop: 'limit',
+              );
+              if (kDebugMode) {
+                debugPrint(
+                  '[ProductDetail] render image product=$productId '
+                  'index=$i raw=$rawImage resolved=$imageUrl',
+                );
+              }
+              return Hero(
+                tag: i == 0 ? 'product-$productId' : 'product-$productId-$i',
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) => Container(
+                    color: AppColors.primary.withValues(alpha: 0.06),
+                  ),
+                  errorWidget: (_, __, error) {
+                    if (kDebugMode) {
+                      debugPrint(
+                        '[ProductDetail] image load failed for product '
+                        '$productId: $imageUrl\n$error',
+                      );
+                    }
+                    return Container(
+                      color: AppColors.primary.withValues(alpha: 0.06),
+                      child: const Icon(Icons.broken_image_outlined, size: 48),
+                    );
+                  },
                 ),
-                fit: BoxFit.cover,
-                placeholder: (_, __) => Container(
-                  color: AppColors.primary.withOpacity(0.06),
-                ),
-                errorWidget: (_, __, ___) => Container(
-                  color: AppColors.primary.withOpacity(0.06),
-                  child: const Icon(Icons.broken_image_outlined, size: 48),
-                ),
-              ),
-            ),
+              );
+            },
           ),
         ),
         // Dot indicators
@@ -343,9 +363,7 @@ class _ImageCarousel extends StatelessWidget {
                   height: 6,
                   margin: const EdgeInsets.symmetric(horizontal: 3),
                   decoration: BoxDecoration(
-                    color: currentIndex == i
-                        ? Colors.white
-                        : Colors.white54,
+                    color: currentIndex == i ? Colors.white : Colors.white54,
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
@@ -372,21 +390,26 @@ class _AddToCartBarState extends ConsumerState<_AddToCartBar> {
 
   Future<void> _addToCart() async {
     setState(() => _adding = true);
-    await ref
-        .read(cartNotifierProvider.notifier)
-        .addItem(widget.product.id);
+    await ref.read(cartNotifierProvider.notifier).addItem(widget.product.id);
     if (mounted) {
+      final colorScheme = Theme.of(context).colorScheme;
       setState(() => _adding = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${widget.product.name} added to cart'),
+          content: Text(
+            '${widget.product.name} added to cart',
+            style: TextStyle(color: colorScheme.onInverseSurface),
+          ),
+          backgroundColor: colorScheme.inverseSurface,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 2),
           action: SnackBarAction(
             label: 'View Cart',
-            onPressed: () => context.mounted
-                ? Navigator.of(context).popUntil((r) => r.isFirst)
-                : null,
+            textColor: colorScheme.inversePrimary,
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              context.push(AppRoutes.cart);
+            },
           ),
         ),
       );
@@ -406,7 +429,7 @@ class _AddToCartBarState extends ConsumerState<_AddToCartBar> {
         color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -438,16 +461,14 @@ class _StockChip extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: (inStock ? AppColors.success : AppColors.error)
-              .withOpacity(0.12),
+              .withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              inStock
-                  ? Icons.check_circle_outline
-                  : Icons.cancel_outlined,
+              inStock ? Icons.check_circle_outline : Icons.cancel_outlined,
               size: 12,
               color: inStock ? AppColors.success : AppColors.error,
             ),
@@ -483,8 +504,11 @@ class _InfoChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,),
+            Icon(
+              icon,
+              size: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(width: 4),
             Text(
               label,
@@ -542,8 +566,18 @@ class _WishlistButton extends ConsumerWidget {
           color: isSaved ? Colors.red : Colors.white,
           size: 22,
         ),
-        onPressed: () =>
-            ref.read(wishlistIdsProvider.notifier).toggle(productId),
+        onPressed: () async {
+          try {
+            await ref.read(wishlistIdsProvider.notifier).toggle(productId);
+          } catch (_) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Could not update wishlist. Please try again.'),
+              ),
+            );
+          }
+        },
       ),
     );
   }
@@ -558,6 +592,7 @@ class _DetailRow extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(bottom: AppDimensions.spacingXs),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
               width: 80,
@@ -568,11 +603,13 @@ class _DetailRow extends StatelessWidget {
                     ),
               ),
             ),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+            Expanded(
+              child: Text(
+                value,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
             ),
           ],
         ),

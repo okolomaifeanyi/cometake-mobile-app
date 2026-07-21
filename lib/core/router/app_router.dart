@@ -5,38 +5,37 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../features/auth/presentation/screens/forgot_password_screen.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/otp_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/cart/presentation/screens/cart_screen.dart';
+import '../../features/chat/presentation/screens/conversation_screen.dart';
+import '../../features/chat/presentation/screens/conversations_screen.dart';
+import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/orders/data/models/checkout_result_model.dart';
+import '../../features/orders/presentation/screens/addresses_screen.dart';
 import '../../features/orders/presentation/screens/checkout_screen.dart';
 import '../../features/orders/presentation/screens/order_detail_screen.dart';
 import '../../features/orders/presentation/screens/order_payment_screen.dart';
 import '../../features/orders/presentation/screens/orders_screen.dart';
 import '../../features/products/domain/entities/product.dart';
-import '../../features/notifications/presentation/screens/notifications_screen.dart';
-import '../../features/orders/presentation/screens/addresses_screen.dart';
-import '../../features/wishlist/presentation/screens/wishlist_screen.dart';
+import '../../features/products/presentation/screens/product_detail_screen.dart';
+import '../../features/products/presentation/screens/products_screen.dart';
+import '../../features/profile/presentation/screens/edit_profile_screen.dart';
+import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/vendor/presentation/screens/vendor_dashboard_screen.dart';
 import '../../features/vendor/presentation/screens/vendor_product_form_screen.dart';
-import '../../features/chat/presentation/screens/conversation_screen.dart';
-import '../../features/chat/presentation/screens/conversations_screen.dart';
 import '../../features/vtu/domain/entities/vtu.dart';
 import '../../features/vtu/presentation/screens/vtu_history_screen.dart';
 import '../../features/vtu/presentation/screens/vtu_purchase_screen.dart';
 import '../../features/vtu/presentation/screens/vtu_screen.dart';
 import '../../features/wallet/presentation/screens/topup_screen.dart';
 import '../../features/wallet/presentation/screens/wallet_screen.dart';
-
+import '../../features/wishlist/presentation/screens/wishlist_screen.dart';
 import '../supabase/supabase_module.dart';
-import '../../features/products/presentation/screens/product_detail_screen.dart';
-import '../../features/products/presentation/screens/products_screen.dart';
-import '../../features/auth/presentation/screens/forgot_password_screen.dart';
-import '../../features/auth/presentation/screens/login_screen.dart';
-import '../../features/auth/presentation/screens/otp_screen.dart';
-import '../../features/auth/presentation/screens/register_screen.dart';
-import '../../features/auth/presentation/screens/splash_screen.dart';
-import '../../features/home/presentation/screens/home_screen.dart';
-import '../../features/profile/presentation/screens/edit_profile_screen.dart';
-import '../../features/profile/presentation/screens/profile_screen.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 
@@ -95,6 +94,8 @@ final appRouterProvider = Provider<GoRouter>(
               path: AppRoutes.products,
               builder: (_, state) => ProductsScreen(
                 initialCategory: state.uri.queryParameters['category'],
+                initialSearch: state.uri.queryParameters['search'],
+                initialSort: state.uri.queryParameters['sort'],
               ),
               routes: [
                 GoRoute(
@@ -201,7 +202,7 @@ final appRouterProvider = Provider<GoRouter>(
                 // Product entity can be passed via extra
                 final extra = state.extra as Product?;
                 return VendorProductFormScreen(
-                    product: extra?.id == productId ? extra : null,
+                  product: extra?.id == productId ? extra : null,
                 );
               },
             ),
@@ -266,11 +267,15 @@ class _MainShell extends StatelessWidget {
     if (location.startsWith(AppRoutes.wallet)) return 1;
     if (location.startsWith(AppRoutes.vtu)) return 2;
     if (location.startsWith(AppRoutes.chat) ||
-        location.startsWith(AppRoutes.conversation)) return 3;
+        location.startsWith(AppRoutes.conversation)) {
+      return 3;
+    }
     if (location.startsWith(AppRoutes.profile) ||
         location.startsWith(AppRoutes.orders) ||
         location.startsWith('/order/') ||
-        location.startsWith(AppRoutes.vendor)) return 4;
+        location.startsWith(AppRoutes.vendor)) {
+      return 4;
+    }
     return 0; // home, products, cart all map to Home tab
   }
 

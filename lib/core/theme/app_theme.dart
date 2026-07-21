@@ -93,7 +93,7 @@ abstract final class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         height: AppDimensions.bottomNavHeight,
         backgroundColor: _lightBg,
-        indicatorColor: AppColors.figmaGreen.withOpacity(0.12),
+        indicatorColor: AppColors.figmaGreen.withValues(alpha: 0.12),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const IconThemeData(color: AppColors.figmaGreen);
@@ -212,7 +212,7 @@ abstract final class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         height: AppDimensions.bottomNavHeight,
         backgroundColor: AppColors.figmaNavBg,
-        indicatorColor: AppColors.figmaGreen.withOpacity(0.15),
+        indicatorColor: AppColors.figmaGreen.withValues(alpha: 0.15),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const IconThemeData(color: AppColors.figmaGreen);

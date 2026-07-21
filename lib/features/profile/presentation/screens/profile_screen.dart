@@ -156,9 +156,9 @@ class _ProfileContent extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.08),
+                    color: Colors.red.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                   ),
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -373,7 +373,7 @@ class _ProfileHeader extends StatelessWidget {
             Text(
               user.email,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.75),
+                color: Colors.white.withValues(alpha: 0.75),
                 fontSize: 13,
               ),
             ),
@@ -385,12 +385,12 @@ class _ProfileHeader extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.phone_outlined,
-                      color: Colors.white.withOpacity(0.6), size: 13,),
+                      color: Colors.white.withValues(alpha: 0.6), size: 13,),
                   const SizedBox(width: 4),
                   Text(
                     user.phone!,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.65),
+                      color: Colors.white.withValues(alpha: 0.65),
                       fontSize: 12,
                     ),
                   ),
@@ -496,7 +496,7 @@ class _RoleBadge extends StatelessWidget {
     final color = switch (role) {
       UserRole.admin => Colors.red.shade400,
       UserRole.vendor => Colors.orange.shade400,
-      UserRole.customer => Colors.white.withOpacity(0.25),
+      UserRole.customer => Colors.white.withValues(alpha: 0.25),
     };
 
     return Container(
@@ -529,7 +529,7 @@ class _StatBox extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
@@ -546,7 +546,7 @@ class _StatBox extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 11,
               ),
             ),
@@ -626,9 +626,8 @@ class _MenuEntry {
     required this.label,
     this.subtitle,
     this.badge,
-    this.badgeColor,
     this.onTap,
-  });
+  }) : badgeColor = null;
 }
 
 class _MenuTile extends StatelessWidget {
@@ -719,7 +718,7 @@ class _ThemeOption extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.figmaGreen.withOpacity(0.12)
+              ? AppColors.figmaGreen.withValues(alpha: 0.12)
               : context.bg,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(

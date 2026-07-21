@@ -24,7 +24,7 @@ class SplashScreen extends ConsumerWidget {
                 width: 88,
                 height: 88,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusXl),
                 ),
@@ -44,7 +44,7 @@ class SplashScreen extends ConsumerWidget {
               Text(
                 'Your marketplace',
                 style: AppTextStyles.bodyLarge.copyWith(
-                  color: Colors.white.withOpacity(0.75),
+                  color: Colors.white.withValues(alpha: 0.75),
                 ),
               ),
               const Spacer(),

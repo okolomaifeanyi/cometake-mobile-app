@@ -95,7 +95,8 @@ class _VendorProductFormScreenState
         comparePrice: _comparePriceCtrl.text.isNotEmpty
             ? double.tryParse(_comparePriceCtrl.text)
             : null,
-        quantity: int.tryParse(_quantityCtrl.text) ?? 1,
+        // null → field omitted from DTO → API leaves stock unchanged
+        quantity: int.tryParse(_quantityCtrl.text),
         categoryId: _selectedCategoryId,
         imageFile: _pickedImage,
         isActive: _isActive,
@@ -299,7 +300,7 @@ class _VendorProductFormScreenState
                             CircularProgressIndicator(strokeWidth: 2),),),
                 error: (_, __) => const SizedBox.shrink(),
                 data: (categories) => DropdownButtonFormField<String>(
-                  value: _selectedCategoryId,
+                  initialValue: _selectedCategoryId,
                   decoration: InputDecoration(
                     labelText: 'Category',
                     border: OutlineInputBorder(

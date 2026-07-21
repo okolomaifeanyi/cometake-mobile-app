@@ -37,7 +37,7 @@ class WishlistScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text('No saved items',
-                      style: Theme.of(context).textTheme.titleMedium),
+                      style: Theme.of(context).textTheme.titleMedium,),
                   const SizedBox(height: 6),
                   Text(
                     'Tap the heart on a product to save it here',

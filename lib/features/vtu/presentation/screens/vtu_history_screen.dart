@@ -79,7 +79,7 @@ class _VtuHistoryTile extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
+              color: AppColors.primary.withValues(alpha: 0.08),
               borderRadius:
                   BorderRadius.circular(AppDimensions.radiusFull),
             ),
@@ -122,7 +122,7 @@ class _VtuHistoryTile extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusFull),
                 ),

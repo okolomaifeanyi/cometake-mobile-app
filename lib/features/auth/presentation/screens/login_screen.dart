@@ -90,22 +90,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 // ─── Brand ────────────────────────────────────────────────
                 Center(
-                  child: Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusLg),
-                    ),
-                    child: const Icon(
-                      Icons.shopping_bag_outlined,
-                      size: 36,
-                      color: AppColors.primary,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+                    child: Image.asset(
+                      'assets/images/cometake.jpg',
+                      width: 84,
+                      height: 84,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusLg),
+                        ),
+                        child: const Icon(
+                          Icons.shopping_bag_outlined,
+                          size: 36,
+                          color: AppColors.primary,
+                        ),
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: AppDimensions.spacingMd),
+                Center(
+                  child: Container(
+                    width: 72,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusFull),
+                    ),
+                  ),
+                ),
                 Center(
                   child: Text(
                     'Welcome back',

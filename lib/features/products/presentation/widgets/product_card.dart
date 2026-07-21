@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/services/cloudinary_service.dart';
@@ -52,30 +53,49 @@ class _ProductCardState extends State<ProductCard> {
             // ─── Product image ─────────────────────────────────────
             Stack(
               children: [
-                SizedBox(
-                  height: AppDimensions.productCardImageHeight,
-                  width: double.infinity,
-                  child: widget.product.thumbnailUrl != null
-                      ? Hero(
-                          tag: 'product-${widget.product.id}',
-                          child: CachedNetworkImage(
-                            imageUrl: CloudinaryService.optimized(
-                              widget.product.thumbnailUrl!,
-                              width: AppDimensions.productCardWidth.toInt() * 2,
+                AspectRatio(
+                  // Square image keeps card content within fixed grid heights.
+                  aspectRatio: 1,
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: widget.product.thumbnailUrl != null
+                        ? Hero(
+                            tag: 'product-${widget.product.id}',
+                            child: Builder(
+                              builder: (_) {
+                                final imageUrl = CloudinaryService.optimized(
+                                  widget.product.thumbnailUrl!,
+                                  width:
+                                      AppDimensions.productCardWidth.toInt() *
+                                          2,
+                                );
+                                return CachedNetworkImage(
+                                  imageUrl: imageUrl,
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, __) => _ImagePlaceholder(),
+                                  errorWidget: (_, __, error) {
+                                    if (kDebugMode) {
+                                      debugPrint(
+                                        '[ProductCard] image load failed for product '
+                                        '${widget.product.id}: $imageUrl\n$error',
+                                      );
+                                    }
+                                    return _ImagePlaceholder();
+                                  },
+                                );
+                              },
                             ),
-                            fit: BoxFit.cover,
-                            placeholder: (_, __) => _ImagePlaceholder(),
-                            errorWidget: (_, __, ___) => _ImagePlaceholder(),
-                          ),
-                        )
-                      : _ImagePlaceholder(),
+                          )
+                        : _ImagePlaceholder(),
+                  ),
                 ),
                 // Discount badge
                 if (widget.product.hasDiscount)
                   Positioned(
                     top: AppDimensions.spacingXs,
                     left: AppDimensions.spacingXs,
-                    child: _DiscountBadge(percent: widget.product.discountPercent),
+                    child:
+                        _DiscountBadge(percent: widget.product.discountPercent),
                   ),
                 // Out of stock overlay
                 if (!widget.product.inStock)
@@ -90,7 +110,8 @@ class _ProductCardState extends State<ProductCard> {
                         ),
                         decoration: BoxDecoration(
                           color: colorScheme.error,
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusXs),
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusXs),
                         ),
                         child: Text(
                           'Out of Stock',
@@ -147,7 +168,7 @@ class _ProductCardState extends State<ProductCard> {
                   ),
                   // Category label
                   if (widget.product.category != null) ...[
-                    const SizedBox(height: AppDimensions.spacingXs),
+                    const SizedBox(height: 2),
                     Text(
                       widget.product.category!.name,
                       style: theme.textTheme.labelSmall?.copyWith(
@@ -170,12 +191,12 @@ class _ProductCardState extends State<ProductCard> {
 class _ImagePlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
-        color: AppColors.primary.withOpacity(0.06),
+        color: AppColors.primary.withValues(alpha: 0.06),
         child: Center(
           child: Icon(
             Icons.image_outlined,
             size: AppDimensions.iconXl,
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
           ),
         ),
       );

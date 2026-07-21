@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -54,9 +56,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     if (result.authorizationUrl != null && result.reference != null) {
       // Navigate to in-app WebView for Paystack payment.
       // Pass the full result as GoRouter extra — avoids URL-encoding a long URL.
-      context.push(
-        AppRoutes.orderPaymentPath(result.paymentId),
-        extra: result,
+      unawaited(
+        context.push(
+          AppRoutes.orderPaymentPath(result.paymentId),
+          extra: result,
+        ),
       );
     } else {
       // Order created but Paystack init failed (cron will retry).
@@ -268,7 +272,7 @@ class _AddressPicker extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
                     ),
                     child: const Text('Default',

@@ -66,7 +66,7 @@ class _VtuAppBar extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.history_rounded,
-                      color: AppColors.figmaGreen, size: 16),
+                      color: AppColors.figmaGreen, size: 16,),
                   SizedBox(width: 4),
                   Text(
                     'History',
@@ -113,7 +113,7 @@ class _VtuHero extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppColors.figmaGreen.withOpacity(0.2),
+                      color: AppColors.figmaGreen.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Text(
@@ -254,7 +254,7 @@ class _TopUpCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: service.color.withOpacity(0.15),
+                color: service.color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(service.icon, color: service.color, size: 24),
@@ -326,7 +326,7 @@ class _VtuHistorySection extends ConsumerWidget {
                       ),
                     ),
                     Icon(Icons.chevron_right,
-                        color: AppColors.figmaGreen, size: 16),
+                        color: AppColors.figmaGreen, size: 16,),
                   ],
                 ),
               ),
@@ -423,7 +423,7 @@ class _VtuTxCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.12),
+              color: statusColor.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: statusColor, size: 18),
@@ -466,7 +466,7 @@ class _VtuTxCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.12),
+                  color: statusColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -498,7 +498,7 @@ class _TrustBanner extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.card,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.figmaGreen.withOpacity(0.25)),
+          border: Border.all(color: AppColors.figmaGreen.withValues(alpha: 0.25)),
         ),
         child: Row(
           children: [
@@ -506,11 +506,11 @@ class _TrustBanner extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: AppColors.figmaGreen.withOpacity(0.12),
+                color: AppColors.figmaGreen.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.shield_rounded,
-                  color: AppColors.figmaGreen, size: 22),
+                  color: AppColors.figmaGreen, size: 22,),
             ),
             const SizedBox(width: 14),
             Expanded(

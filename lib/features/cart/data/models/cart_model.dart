@@ -64,8 +64,31 @@ extension CartItemModelX on CartItemModel {
   }
 
   static String _mediaToUrl(String path) {
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    final withoutExt = path.replaceAll(RegExp(r'\.[^/.]+$'), '');
+    final normalized = path.trim();
+    final supabasePublicObject = RegExp(
+      r'^https?://[^/]+/storage/v1/object/public/(.+)$',
+      caseSensitive: false,
+    );
+    final match = supabasePublicObject.firstMatch(normalized);
+    if (match != null) {
+      final objectPath = match.group(1) ?? '';
+      if (objectPath.isNotEmpty) {
+        final withoutExt = objectPath
+            .replaceFirst(RegExp(r'^/+'), '')
+            .replaceAll(RegExp(r'\.[^/.]+$'), '');
+        final cloud = RemoteConfig.instance.cloudinaryCloudName.isNotEmpty
+            ? RemoteConfig.instance.cloudinaryCloudName
+            : 'dxi9khzro';
+        return 'https://res.cloudinary.com/$cloud/image/upload/f_auto,q_auto,w_400,c_fill/$withoutExt';
+      }
+    }
+
+    if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+      return normalized;
+    }
+    final withoutExt = normalized
+        .replaceFirst(RegExp(r'^/+'), '')
+        .replaceAll(RegExp(r'\.[^/.]+$'), '');
     final cloud = RemoteConfig.instance.cloudinaryCloudName.isNotEmpty
         ? RemoteConfig.instance.cloudinaryCloudName
         : 'dxi9khzro';

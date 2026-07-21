@@ -4,12 +4,12 @@
 // this stub satisfies the property lookup for every OTHER sub-project before their
 // build.gradle is evaluated.
 class FlutterSdkVersions {
-    int compileSdkVersion = 34
-    int targetSdkVersion  = 34
+    int compileSdkVersion = 36
+    int targetSdkVersion  = 36
     int minSdkVersion     = 21
     int versionCode       = 1
     String versionName    = '1.0'
-    String ndkVersion     = '27.0.12077973'
+    String ndkVersion     = '26.1.10909125'
 }
 
 gradle.beforeProject { proj ->

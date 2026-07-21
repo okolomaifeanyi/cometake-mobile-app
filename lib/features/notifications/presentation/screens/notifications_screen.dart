@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/enums/order_status.dart';
 import '../../../orders/domain/entities/order.dart';
@@ -57,7 +56,7 @@ List<_NotifItem> _fromTransactions(List<WalletTransaction> txns) =>
           title: t.isCredit ? 'Wallet Credited' : 'Wallet Debited',
           subtitle: '${Formatters.currency(t.amount)} · ${t.description}',
           time: t.createdAt,
-        )).toList();
+        ),).toList();
 
 (IconData, Color) _orderIconColor(OrderStatus status) => switch (status) {
       OrderStatus.pending => (Icons.access_time_rounded, Colors.orange),
@@ -143,7 +142,7 @@ class _NotifTile extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: item.iconColor.withOpacity(0.12),
+                color: item.iconColor.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(item.icon, color: item.iconColor, size: 22),

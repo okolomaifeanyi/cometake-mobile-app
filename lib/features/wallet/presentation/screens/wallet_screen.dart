@@ -170,7 +170,7 @@ class _BalanceCardState extends ConsumerState<_BalanceCard> {
                           const Text(
                             'Wallet ID',
                             style: TextStyle(
-                                color: Color(0xFF9CA3AF), fontSize: 11),
+                                color: Color(0xFF9CA3AF), fontSize: 11,),
                           ),
                           const SizedBox(height: 2),
                           GestureDetector(
@@ -197,7 +197,7 @@ class _BalanceCardState extends ConsumerState<_BalanceCard> {
                                 ),
                                 const SizedBox(width: 6),
                                 const Icon(Icons.copy,
-                                    color: AppColors.figmaGreen, size: 14),
+                                    color: AppColors.figmaGreen, size: 14,),
                               ],
                             ),
                           ),
@@ -208,11 +208,11 @@ class _BalanceCardState extends ConsumerState<_BalanceCard> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: AppColors.figmaGreen.withOpacity(0.2),
+                        color: AppColors.figmaGreen.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.account_balance_wallet,
-                          color: AppColors.figmaGreen, size: 22),
+                          color: AppColors.figmaGreen, size: 22,),
                     ),
                   ],
                 ),
@@ -292,7 +292,7 @@ class _ActionCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: item.color.withOpacity(0.15),
+                color: item.color.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(item.icon, color: item.color, size: 20),
@@ -319,11 +319,11 @@ class _ActionCard extends StatelessWidget {
 class _QuickServices extends StatelessWidget {
   static const _services = [
     _ServiceItem(
-        'Airtime', Icons.phone_android, Color(0xFF22C55E), '/vtu/airtime'),
+        'Airtime', Icons.phone_android, Color(0xFF22C55E), '/vtu/airtime',),
     _ServiceItem('Data', Icons.wifi, Color(0xFF3B82F6), '/vtu/data'),
     _ServiceItem('Cable TV', Icons.tv, Color(0xFF8B5CF6), '/vtu/cable'),
     _ServiceItem(
-        'Electricity', Icons.bolt, Color(0xFFEAB308), '/vtu/electricity'),
+        'Electricity', Icons.bolt, Color(0xFFEAB308), '/vtu/electricity',),
     _ServiceItem('More', Icons.grid_view, Color(0xFF9CA3AF), '/vtu'),
   ];
 
@@ -356,7 +356,7 @@ class _QuickServices extends StatelessWidget {
                       width: 52,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: s.color.withOpacity(0.15),
+                        color: s.color.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(s.icon, color: s.color, size: 24),
@@ -503,7 +503,7 @@ class _TxCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: amountColor.withOpacity(0.12),
+              color: amountColor.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -585,7 +585,7 @@ class _PromoBanner extends StatelessWidget {
             colors: [AppColors.figmaTeal, AppColors.figmaTealEnd],
           ),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.figmaGreen.withOpacity(0.2)),
+          border: Border.all(color: AppColors.figmaGreen.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
@@ -611,7 +611,7 @@ class _PromoBanner extends StatelessWidget {
                     onTap: () => context.go(AppRoutes.walletTopup),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
+                          horizontal: 14, vertical: 8,),
                       decoration: BoxDecoration(
                         color: AppColors.figmaGreen,
                         borderRadius: BorderRadius.circular(8),
