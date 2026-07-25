@@ -6,13 +6,13 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'firebase_options.dart';
 
 import 'core/config/remote_config.dart';
 import 'core/router/app_router.dart';
 import 'core/supabase/supabase_module.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   runZonedGuarded<Future<void>>(() async {
