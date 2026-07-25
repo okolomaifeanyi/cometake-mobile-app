@@ -47,5 +47,18 @@
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>GIDClientID</key>
+	<string>423246610057-9vvs0inp89lqlejbju9jp0js3bgrpk4n.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.423246610057-9vvs0inp89lqlejbju9jp0js3bgrpk4n</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
