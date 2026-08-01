@@ -47,6 +47,10 @@
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Cometake uses your camera so you can take a photo for your profile picture or a vendor product listing.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Cometake needs access to your photo library so you can choose a photo for your profile picture or a vendor product listing.</string>
 	<key>GIDClientID</key>
 	<string>423246610057-9vvs0inp89lqlejbju9jp0js3bgrpk4n.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>

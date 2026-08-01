@@ -15,7 +15,7 @@ import 'core/theme/theme_provider.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
-  runZonedGuarded<Future<void>>(() async {
+  await runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
     var crashlyticsReady = false;
@@ -116,13 +116,18 @@ class _AppLoaderState extends State<_AppLoader> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.wifi_off_rounded,
-                          size: 48, color: Colors.grey,),
+                      const Icon(
+                        Icons.wifi_off_rounded,
+                        size: 48,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(height: 16),
                       const Text(
                         'Could not connect to server',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600,),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
