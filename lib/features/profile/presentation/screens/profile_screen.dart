@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +14,7 @@ import '../../../../shared/enums/user_role.dart';
 import '../../../../shared/widgets/app_loading.dart';
 import '../../../auth/domain/entities/auth_user.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
+import '../../../chat/presentation/providers/chat_provider.dart';
 import '../../../orders/presentation/providers/orders_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -115,10 +118,7 @@ class _ProfileContent extends ConsumerWidget {
                 _MenuEntry(
                   icon: Icons.help_outline_rounded,
                   label: 'Help & Support',
-                  onTap: () => launchUrl(
-                    Uri.parse('https://cometake.net/help'),
-                    mode: LaunchMode.externalApplication,
-                  ),
+                  onTap: () => _openSupportChat(context, ref),
                 ),
                 _MenuEntry(
                   icon: Icons.description_outlined,
@@ -761,4 +761,18 @@ class _ThemeOption extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _openSupportChat(BuildContext context, WidgetRef ref) async {
+  final room = await ref.read(conversationsProvider.notifier).getSupportRoom();
+  if (!context.mounted) return;
+  if (room == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Could not open support chat. Please try again.'),
+      ),
+    );
+    return;
+  }
+  unawaited(context.push(AppRoutes.conversationPath(room.id)));
 }

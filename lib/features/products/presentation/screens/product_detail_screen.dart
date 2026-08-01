@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +15,7 @@ import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_error_widget.dart';
 import '../../../../shared/widgets/app_loading.dart';
 import '../../../cart/presentation/providers/cart_provider.dart';
+import '../../../chat/presentation/providers/chat_provider.dart';
 import '../../../wishlist/presentation/providers/wishlist_provider.dart';
 import '../../domain/entities/product.dart';
 import '../providers/products_provider.dart';
@@ -79,7 +82,10 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
             child: const Icon(Icons.arrow_back, color: Colors.white),
           ),
         ),
-        actions: [_WishlistButton(productId: product.id)],
+        actions: [
+          if (product.vendor != null) _MessageSellerButton(product: product),
+          _WishlistButton(productId: product.id),
+        ],
       ),
       body: Column(
         children: [
@@ -577,6 +583,42 @@ class _WishlistButton extends ConsumerWidget {
               ),
             );
           }
+        },
+      ),
+    );
+  }
+}
+
+class _MessageSellerButton extends ConsumerWidget {
+  final Product product;
+  const _MessageSellerButton({required this.product});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      margin: const EdgeInsets.all(AppDimensions.spacingSm),
+      decoration: const BoxDecoration(
+        color: Colors.black38,
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.chat_bubble_outline_rounded,
+            color: Colors.white, size: 20,),
+        tooltip: 'Message Seller',
+        onPressed: () async {
+          final room = await ref
+              .read(conversationsProvider.notifier)
+              .getOrCreateVendorRoom(product.vendor!.id, product.id);
+          if (!context.mounted) return;
+          if (room == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Could not start chat. Please try again.'),
+              ),
+            );
+            return;
+          }
+          unawaited(context.push(AppRoutes.conversationPath(room.id)));
         },
       ),
     );
