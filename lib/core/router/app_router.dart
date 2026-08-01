@@ -26,6 +26,8 @@ import '../../features/products/presentation/screens/product_detail_screen.dart'
 import '../../features/products/presentation/screens/products_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/vendor/data/models/subscription_checkout_result_model.dart';
+import '../../features/vendor/presentation/screens/subscription_payment_screen.dart';
 import '../../features/vendor/presentation/screens/vendor_dashboard_screen.dart';
 import '../../features/vendor/presentation/screens/vendor_product_form_screen.dart';
 import '../../features/vtu/domain/entities/vtu.dart';
@@ -220,6 +222,16 @@ final appRouterProvider = Provider<GoRouter>(
               state.extra is CheckoutResultModel ? null : AppRoutes.orders,
           builder: (_, state) => OrderPaymentScreen(
             result: state.extra! as CheckoutResultModel,
+          ),
+        ),
+
+        GoRoute(
+          path: AppRoutes.subscriptionPayment,
+          redirect: (_, state) => state.extra is SubscriptionCheckoutResultModel
+              ? null
+              : AppRoutes.vendor,
+          builder: (_, state) => SubscriptionPaymentScreen(
+            result: state.extra! as SubscriptionCheckoutResultModel,
           ),
         ),
       ],

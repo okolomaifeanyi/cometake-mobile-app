@@ -49,4 +49,7 @@ abstract final class AppRoutes {
   // authorizationUrl is NOT put in the path to avoid URL-encoding Paystack's long URL.
   static const orderPayment = '/payment/:paymentId';
   static String orderPaymentPath(String paymentId) => '/payment/$paymentId';
+
+  // Subscription payment WebView — receives SubscriptionCheckoutResultModel via GoRouter extra.
+  static const subscriptionPayment = '/vendor/subscription-payment';
 }

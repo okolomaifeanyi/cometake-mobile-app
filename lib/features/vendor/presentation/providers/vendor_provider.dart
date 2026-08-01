@@ -9,6 +9,7 @@ import '../../../products/data/models/product_model.dart';
 import '../../../products/domain/entities/product.dart';
 import '../../../products/presentation/providers/products_provider.dart';
 import '../../data/datasources/vendor_datasource.dart';
+import '../../data/models/subscription_checkout_result_model.dart';
 import '../../data/models/subscription_models.dart';
 
 // ─── Vendor products list ─────────────────────────────────────────────────────
@@ -188,15 +189,13 @@ final myVendorSubscriptionProvider =
 class SubscribeState {
   final bool isLoading;
   final String? error;
-  final bool success;
 
-  const SubscribeState({this.isLoading = false, this.error, this.success = false});
+  const SubscribeState({this.isLoading = false, this.error});
 
-  SubscribeState copyWith({bool? isLoading, String? error, bool? success}) =>
+  SubscribeState copyWith({bool? isLoading, String? error}) =>
       SubscribeState(
         isLoading: isLoading ?? this.isLoading,
         error: error,
-        success: success ?? this.success,
       );
 }
 
@@ -204,16 +203,15 @@ class SubscribeNotifier extends AutoDisposeNotifier<SubscribeState> {
   @override
   SubscribeState build() => const SubscribeState();
 
-  Future<bool> subscribe(String planId) async {
+  Future<SubscriptionCheckoutResultModel?> subscribe(String planId) async {
     state = const SubscribeState(isLoading: true);
     try {
-      await ref.read(vendorDatasourceProvider).subscribeToPlan(planId);
-      ref.invalidate(myVendorSubscriptionProvider);
-      state = const SubscribeState(success: true);
-      return true;
+      final result = await ref.read(vendorDatasourceProvider).checkoutPlan(planId);
+      state = const SubscribeState();
+      return result;
     } catch (e) {
       state = SubscribeState(error: e.toString());
-      return false;
+      return null;
     }
   }
 }

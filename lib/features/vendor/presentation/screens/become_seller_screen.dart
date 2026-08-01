@@ -1,10 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../data/models/subscription_models.dart';
 import '../providers/vendor_provider.dart';
+
+String periodSuffix(SubscriptionPlan plan) {
+  if (plan.billingPeriod == 'monthly') return '/month';
+  if (plan.billingPeriod == 'anytime') return '/${plan.durationDays ?? '?'} days';
+  return '/year';
+}
 
 class BecomeSellerScreen extends ConsumerWidget {
   const BecomeSellerScreen({super.key});
@@ -13,17 +23,6 @@ class BecomeSellerScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final plansAsync = ref.watch(subscriptionPlansProvider);
     final subscribeState = ref.watch(subscribeNotifierProvider);
-
-    ref.listen(subscribeNotifierProvider, (_, next) {
-      if (next.success && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🎉 Welcome! Your store is now active.'),
-            backgroundColor: Color(0xFF16A34A),
-          ),
-        );
-      }
-    });
 
     return Scaffold(
       body: CustomScrollView(
@@ -147,9 +146,23 @@ class BecomeSellerScreen extends ConsumerWidget {
                     plan: plans[i],
                     index: i,
                     isLoading: subscribeState.isLoading,
-                    onSubscribe: () => ref
-                        .read(subscribeNotifierProvider.notifier)
-                        .subscribe(plans[i].id),
+                    onSubscribe: () async {
+                      final result = await ref
+                          .read(subscribeNotifierProvider.notifier)
+                          .subscribe(plans[i].id);
+                      if (!context.mounted || result == null) return;
+                      if (result.authorizationUrl == null || result.reference == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Could not start checkout. Please try again.'),
+                          ),
+                        );
+                        return;
+                      }
+                      unawaited(
+                        context.push(AppRoutes.subscriptionPayment, extra: result),
+                      );
+                    },
                   ),
                   childCount: plans.length,
                 ),
@@ -297,7 +310,7 @@ class _PlanCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '/month',
+                      periodSuffix(plan),
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.75),
                         fontSize: 11,
