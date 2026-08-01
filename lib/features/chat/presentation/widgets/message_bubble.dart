@@ -33,6 +33,27 @@ class MessageBubble extends StatelessWidget {
             crossAxisAlignment:
                 isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
+              if (!isMe && message.isBot)
+                Padding(
+                  padding: const EdgeInsets.only(
+                      bottom: 2, left: AppDimensions.spacingXs,),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.smart_toy_outlined,
+                          size: 12, color: theme.colorScheme.onSurfaceVariant,),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Cometake Assistant',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppDimensions.spacingMd,
@@ -41,7 +62,9 @@ class MessageBubble extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isMe
                       ? AppColors.primary
-                      : theme.colorScheme.surfaceContainerHighest,
+                      : (!isMe && message.isBot)
+                          ? AppColors.primary.withValues(alpha: 0.08)
+                          : theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.only(
                     topLeft: const Radius.circular(AppDimensions.radiusMd),
                     topRight: const Radius.circular(AppDimensions.radiusMd),
