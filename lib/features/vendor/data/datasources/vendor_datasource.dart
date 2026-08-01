@@ -6,6 +6,7 @@ import '../../../../core/errors/app_exception.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/supabase/supabase_module.dart';
 import '../../../products/data/models/product_model.dart';
+import '../models/subscription_checkout_result_model.dart';
 import '../models/subscription_models.dart';
 
 class VendorDatasource {
@@ -88,45 +89,49 @@ class VendorDatasource {
 
   Future<List<SubscriptionPlan>> getPlans() async {
     try {
-      final rows = await _client
-          .from('core_subscriptionplan')
-          .select('id, title, price, no_of_product_upload_per_month, plan_description, is_active, description')
-          .eq('is_active', true)
-          .order('price');
-      return (rows as List)
+      final res = await _dio.get<List<dynamic>>('/api/v1/subscriptions/plans');
+      final rows = res.data ?? [];
+      return rows
           .map((r) => SubscriptionPlan.fromJson(r as Map<String, dynamic>))
+          .where((p) => p.isActive)
           .toList();
-    } catch (e) {
-      throw ServerException('Failed to load plans: $e');
+    } on DioException catch (e) {
+      throw ServerException(
+        e.response?.data?['error']?.toString() ?? 'Failed to load plans',
+        statusCode: e.response?.statusCode,
+      );
     }
   }
 
   Future<VendorSubscription?> getMySubscription() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return null;
     try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) return null;
-      final rows = await _client
-          .from('vendor_subscriptions')
-          .select('id, user_id, plan_id, status, start_date, end_date')
-          .eq('user_id', userId)
-          .eq('status', 'ACTIVE');
-      if ((rows as List).isEmpty) return null;
-      return VendorSubscription.fromJson(rows.first);
-    } catch (_) {
-      return null;
+      final res = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/subscriptions/vendor/$userId',
+      );
+      return VendorSubscription.fromJson(res.data ?? {});
+    } on DioException catch (e) {
+      // 404 means "no subscription yet" — a valid, expected state, not an error.
+      if (e.response?.statusCode == 404) return null;
+      throw ServerException(
+        e.response?.data?['error']?.toString() ?? 'Failed to load subscription',
+        statusCode: e.response?.statusCode,
+      );
     }
   }
 
-  Future<void> subscribeToPlan(String planId) async {
+  Future<SubscriptionCheckoutResultModel> checkoutPlan(String planId) async {
     try {
       final userId = _client.auth.currentUser?.id;
       if (userId == null) throw const AuthException('Not authenticated');
-      await _dio.post<void>(
-        '/api/v1/subscriptions/vendor/$userId/subscribe/$planId',
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/api/v1/subscriptions/vendor/$userId/checkout/$planId',
       );
+      return SubscriptionCheckoutResultModel.fromJson(res.data ?? {});
     } on DioException catch (e) {
       throw ServerException(
-        e.response?.data?['error']?.toString() ?? 'Subscription failed',
+        e.response?.data?['error']?.toString() ?? 'Checkout failed',
         statusCode: e.response?.statusCode,
       );
     }
