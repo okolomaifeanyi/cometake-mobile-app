@@ -36,6 +36,26 @@ class ConversationsNotifier extends AsyncNotifier<List<ChatRoom>> {
       return null;
     }
   }
+
+  Future<ChatRoom?> getOrCreateVendorRoom(String vendorId, String productId) async {
+    try {
+      final ds = ref.read(chatDatasourceProvider);
+      final model = await ds.getOrCreateVendorRoom(vendorId, productId);
+      return model.toEntity();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<ChatRoom?> getSupportRoom() async {
+    try {
+      final ds = ref.read(chatDatasourceProvider);
+      final model = await ds.getSupportRoom();
+      return model.toEntity();
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 final conversationsProvider =
