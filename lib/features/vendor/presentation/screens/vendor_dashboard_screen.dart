@@ -25,7 +25,7 @@ class VendorDashboardScreen extends ConsumerWidget {
 
     return subscriptionAsync.when(
       loading: () => const Scaffold(body: AppLoadingOverlay()),
-      error: (_, __) => const _Dashboard(),
+      error: (_, __) => const BecomeSellerScreen(),
       data: (sub) {
         if (sub == null || !sub.isActive) return const BecomeSellerScreen();
         return const _Dashboard();

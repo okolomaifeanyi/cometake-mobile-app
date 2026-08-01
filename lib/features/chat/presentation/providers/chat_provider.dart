@@ -108,10 +108,11 @@ class MessagesNotifier
 
       final sent = await ds.sendMessage(arg, content);
 
-      // Replace optimistic with real
+      // Replace optimistic with real (also drop any realtime-delivered
+      // echo of this same message that may have already arrived)
       final current = state.valueOrNull ?? [];
       state = AsyncData([
-        ...current.where((m) => m.id != optimistic.id),
+        ...current.where((m) => m.id != optimistic.id && m.id != sent.id),
         sent,
       ]);
     } catch (e) {

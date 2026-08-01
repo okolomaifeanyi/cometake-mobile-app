@@ -83,7 +83,7 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
           ),
         ),
         actions: [
-          if (product.vendor != null) _MessageSellerButton(product: product),
+          if (product.vendorId != null) _MessageSellerButton(product: product),
           _WishlistButton(productId: product.id),
         ],
       ),
@@ -595,6 +595,12 @@ class _MessageSellerButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final vendorId = product.vendorId;
+    final currentUserId = ref.watch(currentUserIdProvider);
+    if (vendorId == null || vendorId == currentUserId) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       margin: const EdgeInsets.all(AppDimensions.spacingSm),
       decoration: const BoxDecoration(
@@ -608,7 +614,7 @@ class _MessageSellerButton extends ConsumerWidget {
         onPressed: () async {
           final room = await ref
               .read(conversationsProvider.notifier)
-              .getOrCreateVendorRoom(product.vendor!.id, product.id);
+              .getOrCreateVendorRoom(vendorId, product.id);
           if (!context.mounted) return;
           if (room == null) {
             ScaffoldMessenger.of(context).showSnackBar(
