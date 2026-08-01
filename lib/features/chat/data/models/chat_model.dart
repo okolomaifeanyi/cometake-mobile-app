@@ -27,6 +27,7 @@ class ChatMessageModel with _$ChatMessageModel {
     @JsonKey(name: 'senderId') required String senderId,
     required String content,
     @Default(false) bool isRead,
+    @Default(false) bool isBot,
     @JsonKey(name: 'createdAt') required String createdAt,
     ChatParticipantModel? sender,
   }) = _ChatMessageModel;
@@ -44,6 +45,9 @@ class ChatRoomModel with _$ChatRoomModel {
     @Default(0) int unreadCount,
     // lastMessage embedded as first item of messages array (from API)
     @Default([]) List<ChatMessageModel> messages,
+    String? productId,
+    String? productName,
+    @Default(false) bool needsHuman,
   }) = _ChatRoomModel;
 
   factory ChatRoomModel.fromJson(Map<String, dynamic> json) =>
@@ -67,6 +71,7 @@ extension ChatMessageModelX on ChatMessageModel {
         senderId: senderId,
         content: content,
         isRead: isRead,
+        isBot: isBot,
         createdAt: DateTime.tryParse(createdAt) ?? DateTime.now(),
         sender: sender?.toEntity(),
       );
@@ -80,6 +85,9 @@ extension ChatRoomModelX on ChatRoomModel {
         unreadCount: unreadCount,
         lastMessage:
             messages.isNotEmpty ? messages.first.toEntity() : null,
+        productId: productId,
+        productName: productName,
+        needsHuman: needsHuman,
       );
 }
 
@@ -92,6 +100,7 @@ ChatMessage supabaseRowToMessage(Map<String, dynamic> row) {
     senderId: row['sender_id'] as String,
     content: row['content'] as String,
     isRead: row['read'] as bool? ?? false,
+    isBot: row['is_bot'] as bool? ?? false,
     createdAt: DateTime.tryParse(row['created_at'] as String? ?? '') ??
         DateTime.now(),
   );

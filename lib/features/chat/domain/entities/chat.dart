@@ -27,6 +27,9 @@ class ChatRoom with _$ChatRoom {
     required DateTime updatedAt,
     @Default(0) int unreadCount,
     ChatMessage? lastMessage,
+    String? productId,
+    String? productName,
+    @Default(false) bool needsHuman,
   }) = _ChatRoom;
 
   ChatParticipant? other(String myId) =>
@@ -44,6 +47,7 @@ class ChatMessage with _$ChatMessage {
     required String content,
     required DateTime createdAt,
     @Default(false) bool isRead,
+    @Default(false) bool isBot,
     ChatParticipant? sender,
   }) = _ChatMessage;
 

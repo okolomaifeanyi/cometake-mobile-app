@@ -34,6 +34,7 @@ _$ChatMessageModelImpl _$$ChatMessageModelImplFromJson(
       senderId: json['senderId'] as String,
       content: json['content'] as String,
       isRead: json['isRead'] as bool? ?? false,
+      isBot: json['isBot'] as bool? ?? false,
       createdAt: json['createdAt'] as String,
       sender: json['sender'] == null
           ? null
@@ -49,6 +50,7 @@ Map<String, dynamic> _$$ChatMessageModelImplToJson(
       'senderId': instance.senderId,
       'content': instance.content,
       'isRead': instance.isRead,
+      'isBot': instance.isBot,
       'createdAt': instance.createdAt,
       'sender': instance.sender,
     };
@@ -67,6 +69,9 @@ _$ChatRoomModelImpl _$$ChatRoomModelImplFromJson(Map<String, dynamic> json) =>
               ?.map((e) => ChatMessageModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
+      productId: json['productId'] as String?,
+      productName: json['productName'] as String?,
+      needsHuman: json['needsHuman'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$ChatRoomModelImplToJson(_$ChatRoomModelImpl instance) =>
@@ -76,4 +81,7 @@ Map<String, dynamic> _$$ChatRoomModelImplToJson(_$ChatRoomModelImpl instance) =>
       'updatedAt': instance.updatedAt,
       'unreadCount': instance.unreadCount,
       'messages': instance.messages,
+      'productId': instance.productId,
+      'productName': instance.productName,
+      'needsHuman': instance.needsHuman,
     };

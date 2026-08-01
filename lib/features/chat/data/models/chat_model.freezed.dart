@@ -274,6 +274,7 @@ mixin _$ChatMessageModel {
   String get senderId => throw _privateConstructorUsedError;
   String get content => throw _privateConstructorUsedError;
   bool get isRead => throw _privateConstructorUsedError;
+  bool get isBot => throw _privateConstructorUsedError;
   @JsonKey(name: 'createdAt')
   String get createdAt => throw _privateConstructorUsedError;
   ChatParticipantModel? get sender => throw _privateConstructorUsedError;
@@ -300,6 +301,7 @@ abstract class $ChatMessageModelCopyWith<$Res> {
       @JsonKey(name: 'senderId') String senderId,
       String content,
       bool isRead,
+      bool isBot,
       @JsonKey(name: 'createdAt') String createdAt,
       ChatParticipantModel? sender});
 
@@ -326,6 +328,7 @@ class _$ChatMessageModelCopyWithImpl<$Res, $Val extends ChatMessageModel>
     Object? senderId = null,
     Object? content = null,
     Object? isRead = null,
+    Object? isBot = null,
     Object? createdAt = null,
     Object? sender = freezed,
   }) {
@@ -349,6 +352,10 @@ class _$ChatMessageModelCopyWithImpl<$Res, $Val extends ChatMessageModel>
       isRead: null == isRead
           ? _value.isRead
           : isRead // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isBot: null == isBot
+          ? _value.isBot
+          : isBot // ignore: cast_nullable_to_non_nullable
               as bool,
       createdAt: null == createdAt
           ? _value.createdAt
@@ -390,6 +397,7 @@ abstract class _$$ChatMessageModelImplCopyWith<$Res>
       @JsonKey(name: 'senderId') String senderId,
       String content,
       bool isRead,
+      bool isBot,
       @JsonKey(name: 'createdAt') String createdAt,
       ChatParticipantModel? sender});
 
@@ -415,6 +423,7 @@ class __$$ChatMessageModelImplCopyWithImpl<$Res>
     Object? senderId = null,
     Object? content = null,
     Object? isRead = null,
+    Object? isBot = null,
     Object? createdAt = null,
     Object? sender = freezed,
   }) {
@@ -439,6 +448,10 @@ class __$$ChatMessageModelImplCopyWithImpl<$Res>
           ? _value.isRead
           : isRead // ignore: cast_nullable_to_non_nullable
               as bool,
+      isBot: null == isBot
+          ? _value.isBot
+          : isBot // ignore: cast_nullable_to_non_nullable
+              as bool,
       createdAt: null == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
@@ -460,6 +473,7 @@ class _$ChatMessageModelImpl implements _ChatMessageModel {
       @JsonKey(name: 'senderId') required this.senderId,
       required this.content,
       this.isRead = false,
+      this.isBot = false,
       @JsonKey(name: 'createdAt') required this.createdAt,
       this.sender});
 
@@ -480,6 +494,9 @@ class _$ChatMessageModelImpl implements _ChatMessageModel {
   @JsonKey()
   final bool isRead;
   @override
+  @JsonKey()
+  final bool isBot;
+  @override
   @JsonKey(name: 'createdAt')
   final String createdAt;
   @override
@@ -487,7 +504,7 @@ class _$ChatMessageModelImpl implements _ChatMessageModel {
 
   @override
   String toString() {
-    return 'ChatMessageModel(id: $id, roomId: $roomId, senderId: $senderId, content: $content, isRead: $isRead, createdAt: $createdAt, sender: $sender)';
+    return 'ChatMessageModel(id: $id, roomId: $roomId, senderId: $senderId, content: $content, isRead: $isRead, isBot: $isBot, createdAt: $createdAt, sender: $sender)';
   }
 
   @override
@@ -501,6 +518,7 @@ class _$ChatMessageModelImpl implements _ChatMessageModel {
                 other.senderId == senderId) &&
             (identical(other.content, content) || other.content == content) &&
             (identical(other.isRead, isRead) || other.isRead == isRead) &&
+            (identical(other.isBot, isBot) || other.isBot == isBot) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.sender, sender) || other.sender == sender));
@@ -508,8 +526,8 @@ class _$ChatMessageModelImpl implements _ChatMessageModel {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, id, roomId, senderId, content, isRead, createdAt, sender);
+  int get hashCode => Object.hash(runtimeType, id, roomId, senderId, content,
+      isRead, isBot, createdAt, sender);
 
   /// Create a copy of ChatMessageModel
   /// with the given fields replaced by the non-null parameter values.
@@ -535,6 +553,7 @@ abstract class _ChatMessageModel implements ChatMessageModel {
       @JsonKey(name: 'senderId') required final String senderId,
       required final String content,
       final bool isRead,
+      final bool isBot,
       @JsonKey(name: 'createdAt') required final String createdAt,
       final ChatParticipantModel? sender}) = _$ChatMessageModelImpl;
 
@@ -553,6 +572,8 @@ abstract class _ChatMessageModel implements ChatMessageModel {
   String get content;
   @override
   bool get isRead;
+  @override
+  bool get isBot;
   @override
   @JsonKey(name: 'createdAt')
   String get createdAt;
@@ -581,6 +602,9 @@ mixin _$ChatRoomModel {
   int get unreadCount =>
       throw _privateConstructorUsedError; // lastMessage embedded as first item of messages array (from API)
   List<ChatMessageModel> get messages => throw _privateConstructorUsedError;
+  String? get productId => throw _privateConstructorUsedError;
+  String? get productName => throw _privateConstructorUsedError;
+  bool get needsHuman => throw _privateConstructorUsedError;
 
   /// Serializes this ChatRoomModel to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -603,7 +627,10 @@ abstract class $ChatRoomModelCopyWith<$Res> {
       List<ChatParticipantModel> participants,
       @JsonKey(name: 'updatedAt') String updatedAt,
       int unreadCount,
-      List<ChatMessageModel> messages});
+      List<ChatMessageModel> messages,
+      String? productId,
+      String? productName,
+      bool needsHuman});
 }
 
 /// @nodoc
@@ -626,6 +653,9 @@ class _$ChatRoomModelCopyWithImpl<$Res, $Val extends ChatRoomModel>
     Object? updatedAt = null,
     Object? unreadCount = null,
     Object? messages = null,
+    Object? productId = freezed,
+    Object? productName = freezed,
+    Object? needsHuman = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -648,6 +678,18 @@ class _$ChatRoomModelCopyWithImpl<$Res, $Val extends ChatRoomModel>
           ? _value.messages
           : messages // ignore: cast_nullable_to_non_nullable
               as List<ChatMessageModel>,
+      productId: freezed == productId
+          ? _value.productId
+          : productId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      productName: freezed == productName
+          ? _value.productName
+          : productName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      needsHuman: null == needsHuman
+          ? _value.needsHuman
+          : needsHuman // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -665,7 +707,10 @@ abstract class _$$ChatRoomModelImplCopyWith<$Res>
       List<ChatParticipantModel> participants,
       @JsonKey(name: 'updatedAt') String updatedAt,
       int unreadCount,
-      List<ChatMessageModel> messages});
+      List<ChatMessageModel> messages,
+      String? productId,
+      String? productName,
+      bool needsHuman});
 }
 
 /// @nodoc
@@ -686,6 +731,9 @@ class __$$ChatRoomModelImplCopyWithImpl<$Res>
     Object? updatedAt = null,
     Object? unreadCount = null,
     Object? messages = null,
+    Object? productId = freezed,
+    Object? productName = freezed,
+    Object? needsHuman = null,
   }) {
     return _then(_$ChatRoomModelImpl(
       id: null == id
@@ -708,6 +756,18 @@ class __$$ChatRoomModelImplCopyWithImpl<$Res>
           ? _value._messages
           : messages // ignore: cast_nullable_to_non_nullable
               as List<ChatMessageModel>,
+      productId: freezed == productId
+          ? _value.productId
+          : productId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      productName: freezed == productName
+          ? _value.productName
+          : productName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      needsHuman: null == needsHuman
+          ? _value.needsHuman
+          : needsHuman // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -720,7 +780,10 @@ class _$ChatRoomModelImpl implements _ChatRoomModel {
       final List<ChatParticipantModel> participants = const [],
       @JsonKey(name: 'updatedAt') required this.updatedAt,
       this.unreadCount = 0,
-      final List<ChatMessageModel> messages = const []})
+      final List<ChatMessageModel> messages = const [],
+      this.productId,
+      this.productName,
+      this.needsHuman = false})
       : _participants = participants,
         _messages = messages;
 
@@ -756,8 +819,16 @@ class _$ChatRoomModelImpl implements _ChatRoomModel {
   }
 
   @override
+  final String? productId;
+  @override
+  final String? productName;
+  @override
+  @JsonKey()
+  final bool needsHuman;
+
+  @override
   String toString() {
-    return 'ChatRoomModel(id: $id, participants: $participants, updatedAt: $updatedAt, unreadCount: $unreadCount, messages: $messages)';
+    return 'ChatRoomModel(id: $id, participants: $participants, updatedAt: $updatedAt, unreadCount: $unreadCount, messages: $messages, productId: $productId, productName: $productName, needsHuman: $needsHuman)';
   }
 
   @override
@@ -772,7 +843,13 @@ class _$ChatRoomModelImpl implements _ChatRoomModel {
                 other.updatedAt == updatedAt) &&
             (identical(other.unreadCount, unreadCount) ||
                 other.unreadCount == unreadCount) &&
-            const DeepCollectionEquality().equals(other._messages, _messages));
+            const DeepCollectionEquality().equals(other._messages, _messages) &&
+            (identical(other.productId, productId) ||
+                other.productId == productId) &&
+            (identical(other.productName, productName) ||
+                other.productName == productName) &&
+            (identical(other.needsHuman, needsHuman) ||
+                other.needsHuman == needsHuman));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -783,7 +860,10 @@ class _$ChatRoomModelImpl implements _ChatRoomModel {
       const DeepCollectionEquality().hash(_participants),
       updatedAt,
       unreadCount,
-      const DeepCollectionEquality().hash(_messages));
+      const DeepCollectionEquality().hash(_messages),
+      productId,
+      productName,
+      needsHuman);
 
   /// Create a copy of ChatRoomModel
   /// with the given fields replaced by the non-null parameter values.
@@ -807,7 +887,10 @@ abstract class _ChatRoomModel implements ChatRoomModel {
       final List<ChatParticipantModel> participants,
       @JsonKey(name: 'updatedAt') required final String updatedAt,
       final int unreadCount,
-      final List<ChatMessageModel> messages}) = _$ChatRoomModelImpl;
+      final List<ChatMessageModel> messages,
+      final String? productId,
+      final String? productName,
+      final bool needsHuman}) = _$ChatRoomModelImpl;
 
   factory _ChatRoomModel.fromJson(Map<String, dynamic> json) =
       _$ChatRoomModelImpl.fromJson;
@@ -823,6 +906,12 @@ abstract class _ChatRoomModel implements ChatRoomModel {
   int get unreadCount; // lastMessage embedded as first item of messages array (from API)
   @override
   List<ChatMessageModel> get messages;
+  @override
+  String? get productId;
+  @override
+  String? get productName;
+  @override
+  bool get needsHuman;
 
   /// Create a copy of ChatRoomModel
   /// with the given fields replaced by the non-null parameter values.

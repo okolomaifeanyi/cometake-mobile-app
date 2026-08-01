@@ -240,6 +240,9 @@ mixin _$ChatRoom {
   DateTime get updatedAt => throw _privateConstructorUsedError;
   int get unreadCount => throw _privateConstructorUsedError;
   ChatMessage? get lastMessage => throw _privateConstructorUsedError;
+  String? get productId => throw _privateConstructorUsedError;
+  String? get productName => throw _privateConstructorUsedError;
+  bool get needsHuman => throw _privateConstructorUsedError;
 
   /// Create a copy of ChatRoom
   /// with the given fields replaced by the non-null parameter values.
@@ -258,7 +261,10 @@ abstract class $ChatRoomCopyWith<$Res> {
       List<ChatParticipant> participants,
       DateTime updatedAt,
       int unreadCount,
-      ChatMessage? lastMessage});
+      ChatMessage? lastMessage,
+      String? productId,
+      String? productName,
+      bool needsHuman});
 
   $ChatMessageCopyWith<$Res>? get lastMessage;
 }
@@ -283,6 +289,9 @@ class _$ChatRoomCopyWithImpl<$Res, $Val extends ChatRoom>
     Object? updatedAt = null,
     Object? unreadCount = null,
     Object? lastMessage = freezed,
+    Object? productId = freezed,
+    Object? productName = freezed,
+    Object? needsHuman = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -305,6 +314,18 @@ class _$ChatRoomCopyWithImpl<$Res, $Val extends ChatRoom>
           ? _value.lastMessage
           : lastMessage // ignore: cast_nullable_to_non_nullable
               as ChatMessage?,
+      productId: freezed == productId
+          ? _value.productId
+          : productId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      productName: freezed == productName
+          ? _value.productName
+          : productName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      needsHuman: null == needsHuman
+          ? _value.needsHuman
+          : needsHuman // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 
@@ -336,7 +357,10 @@ abstract class _$$ChatRoomImplCopyWith<$Res>
       List<ChatParticipant> participants,
       DateTime updatedAt,
       int unreadCount,
-      ChatMessage? lastMessage});
+      ChatMessage? lastMessage,
+      String? productId,
+      String? productName,
+      bool needsHuman});
 
   @override
   $ChatMessageCopyWith<$Res>? get lastMessage;
@@ -360,6 +384,9 @@ class __$$ChatRoomImplCopyWithImpl<$Res>
     Object? updatedAt = null,
     Object? unreadCount = null,
     Object? lastMessage = freezed,
+    Object? productId = freezed,
+    Object? productName = freezed,
+    Object? needsHuman = null,
   }) {
     return _then(_$ChatRoomImpl(
       id: null == id
@@ -382,6 +409,18 @@ class __$$ChatRoomImplCopyWithImpl<$Res>
           ? _value.lastMessage
           : lastMessage // ignore: cast_nullable_to_non_nullable
               as ChatMessage?,
+      productId: freezed == productId
+          ? _value.productId
+          : productId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      productName: freezed == productName
+          ? _value.productName
+          : productName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      needsHuman: null == needsHuman
+          ? _value.needsHuman
+          : needsHuman // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -394,7 +433,10 @@ class _$ChatRoomImpl extends _ChatRoom {
       required final List<ChatParticipant> participants,
       required this.updatedAt,
       this.unreadCount = 0,
-      this.lastMessage})
+      this.lastMessage,
+      this.productId,
+      this.productName,
+      this.needsHuman = false})
       : _participants = participants,
         super._();
 
@@ -415,10 +457,17 @@ class _$ChatRoomImpl extends _ChatRoom {
   final int unreadCount;
   @override
   final ChatMessage? lastMessage;
+  @override
+  final String? productId;
+  @override
+  final String? productName;
+  @override
+  @JsonKey()
+  final bool needsHuman;
 
   @override
   String toString() {
-    return 'ChatRoom(id: $id, participants: $participants, updatedAt: $updatedAt, unreadCount: $unreadCount, lastMessage: $lastMessage)';
+    return 'ChatRoom(id: $id, participants: $participants, updatedAt: $updatedAt, unreadCount: $unreadCount, lastMessage: $lastMessage, productId: $productId, productName: $productName, needsHuman: $needsHuman)';
   }
 
   @override
@@ -434,7 +483,13 @@ class _$ChatRoomImpl extends _ChatRoom {
             (identical(other.unreadCount, unreadCount) ||
                 other.unreadCount == unreadCount) &&
             (identical(other.lastMessage, lastMessage) ||
-                other.lastMessage == lastMessage));
+                other.lastMessage == lastMessage) &&
+            (identical(other.productId, productId) ||
+                other.productId == productId) &&
+            (identical(other.productName, productName) ||
+                other.productName == productName) &&
+            (identical(other.needsHuman, needsHuman) ||
+                other.needsHuman == needsHuman));
   }
 
   @override
@@ -444,7 +499,10 @@ class _$ChatRoomImpl extends _ChatRoom {
       const DeepCollectionEquality().hash(_participants),
       updatedAt,
       unreadCount,
-      lastMessage);
+      lastMessage,
+      productId,
+      productName,
+      needsHuman);
 
   /// Create a copy of ChatRoom
   /// with the given fields replaced by the non-null parameter values.
@@ -461,7 +519,10 @@ abstract class _ChatRoom extends ChatRoom {
       required final List<ChatParticipant> participants,
       required final DateTime updatedAt,
       final int unreadCount,
-      final ChatMessage? lastMessage}) = _$ChatRoomImpl;
+      final ChatMessage? lastMessage,
+      final String? productId,
+      final String? productName,
+      final bool needsHuman}) = _$ChatRoomImpl;
   const _ChatRoom._() : super._();
 
   @override
@@ -474,6 +535,12 @@ abstract class _ChatRoom extends ChatRoom {
   int get unreadCount;
   @override
   ChatMessage? get lastMessage;
+  @override
+  String? get productId;
+  @override
+  String? get productName;
+  @override
+  bool get needsHuman;
 
   /// Create a copy of ChatRoom
   /// with the given fields replaced by the non-null parameter values.
@@ -491,6 +558,7 @@ mixin _$ChatMessage {
   String get content => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
   bool get isRead => throw _privateConstructorUsedError;
+  bool get isBot => throw _privateConstructorUsedError;
   ChatParticipant? get sender => throw _privateConstructorUsedError;
 
   /// Create a copy of ChatMessage
@@ -513,6 +581,7 @@ abstract class $ChatMessageCopyWith<$Res> {
       String content,
       DateTime createdAt,
       bool isRead,
+      bool isBot,
       ChatParticipant? sender});
 
   $ChatParticipantCopyWith<$Res>? get sender;
@@ -539,6 +608,7 @@ class _$ChatMessageCopyWithImpl<$Res, $Val extends ChatMessage>
     Object? content = null,
     Object? createdAt = null,
     Object? isRead = null,
+    Object? isBot = null,
     Object? sender = freezed,
   }) {
     return _then(_value.copyWith(
@@ -565,6 +635,10 @@ class _$ChatMessageCopyWithImpl<$Res, $Val extends ChatMessage>
       isRead: null == isRead
           ? _value.isRead
           : isRead // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isBot: null == isBot
+          ? _value.isBot
+          : isBot // ignore: cast_nullable_to_non_nullable
               as bool,
       sender: freezed == sender
           ? _value.sender
@@ -603,6 +677,7 @@ abstract class _$$ChatMessageImplCopyWith<$Res>
       String content,
       DateTime createdAt,
       bool isRead,
+      bool isBot,
       ChatParticipant? sender});
 
   @override
@@ -628,6 +703,7 @@ class __$$ChatMessageImplCopyWithImpl<$Res>
     Object? content = null,
     Object? createdAt = null,
     Object? isRead = null,
+    Object? isBot = null,
     Object? sender = freezed,
   }) {
     return _then(_$ChatMessageImpl(
@@ -655,6 +731,10 @@ class __$$ChatMessageImplCopyWithImpl<$Res>
           ? _value.isRead
           : isRead // ignore: cast_nullable_to_non_nullable
               as bool,
+      isBot: null == isBot
+          ? _value.isBot
+          : isBot // ignore: cast_nullable_to_non_nullable
+              as bool,
       sender: freezed == sender
           ? _value.sender
           : sender // ignore: cast_nullable_to_non_nullable
@@ -673,6 +753,7 @@ class _$ChatMessageImpl extends _ChatMessage {
       required this.content,
       required this.createdAt,
       this.isRead = false,
+      this.isBot = false,
       this.sender})
       : super._();
 
@@ -690,11 +771,14 @@ class _$ChatMessageImpl extends _ChatMessage {
   @JsonKey()
   final bool isRead;
   @override
+  @JsonKey()
+  final bool isBot;
+  @override
   final ChatParticipant? sender;
 
   @override
   String toString() {
-    return 'ChatMessage(id: $id, roomId: $roomId, senderId: $senderId, content: $content, createdAt: $createdAt, isRead: $isRead, sender: $sender)';
+    return 'ChatMessage(id: $id, roomId: $roomId, senderId: $senderId, content: $content, createdAt: $createdAt, isRead: $isRead, isBot: $isBot, sender: $sender)';
   }
 
   @override
@@ -710,12 +794,13 @@ class _$ChatMessageImpl extends _ChatMessage {
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.isRead, isRead) || other.isRead == isRead) &&
+            (identical(other.isBot, isBot) || other.isBot == isBot) &&
             (identical(other.sender, sender) || other.sender == sender));
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType, id, roomId, senderId, content, createdAt, isRead, sender);
+  int get hashCode => Object.hash(runtimeType, id, roomId, senderId, content,
+      createdAt, isRead, isBot, sender);
 
   /// Create a copy of ChatMessage
   /// with the given fields replaced by the non-null parameter values.
@@ -734,6 +819,7 @@ abstract class _ChatMessage extends ChatMessage {
       required final String content,
       required final DateTime createdAt,
       final bool isRead,
+      final bool isBot,
       final ChatParticipant? sender}) = _$ChatMessageImpl;
   const _ChatMessage._() : super._();
 
@@ -749,6 +835,8 @@ abstract class _ChatMessage extends ChatMessage {
   DateTime get createdAt;
   @override
   bool get isRead;
+  @override
+  bool get isBot;
   @override
   ChatParticipant? get sender;
 
