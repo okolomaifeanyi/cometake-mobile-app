@@ -1,180 +1,84 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../../../core/supabase/supabase_module.dart';
 import '../../domain/entities/chat.dart';
 import '../models/chat_model.dart';
 
 class ChatDatasource {
+  final Dio _dio;
   final SupabaseClient _client;
 
-  const ChatDatasource(this._client);
-
-  String? get _myId => _client.auth.currentUser?.id;
+  const ChatDatasource(this._dio, this._client);
 
   // ─── Rooms ──────────────────────────────────────────────────────────────────
 
   Future<List<ChatRoomModel>> fetchRooms() async {
-    final myId = _myId;
-    if (myId == null) return [];
-
     try {
-      // 1. Get chat IDs where I'm a member
-      final memberRows = await _client
-          .from('core_chat_members')
-          .select('chat_id')
-          .eq('user_id', myId);
-
-      if ((memberRows as List).isEmpty) return [];
-      final chatIds =
-          memberRows.map((r) => r['chat_id'] as String).toList();
-
-      // 2. Room metadata
-      final roomRows = await _client
-          .from('core_chat')
-          .select('id, created_at, updated_at')
-          .inFilter('id', chatIds)
-          .order('updated_at', ascending: false, nullsFirst: false);
-
-      // 3. All participants for these rooms
-      final participantRows = await _client
-          .from('core_chat_members')
-          .select(
-              'chat_id, user:core_user!user_id(id, first_name, last_name, email, is_superuser, is_seller)',)
-          .inFilter('chat_id', chatIds);
-
-      // 4. Last message per room
-      final msgRows = await _client
-          .from('core_sellermessage')
-          .select('id, chat_id, sender_id, content, read, created_at')
-          .inFilter('chat_id', chatIds)
-          .order('created_at', ascending: false);
-
-      // 5. Unread count
-      final unreadRows = await _client
-          .from('core_sellermessage')
-          .select('chat_id')
-          .eq('reciever_id', myId)
-          .eq('read', false)
-          .inFilter('chat_id', chatIds);
-
-      // ── Build in Dart ────────────────────────────────────────────────────
-
-      // Participants grouped by chat_id
-      final participantsByChat = <String, List<ChatParticipantModel>>{};
-      for (final row in participantRows as List) {
-        final chatId = row['chat_id'] as String;
-        final u = row['user'] as Map<String, dynamic>?;
-        if (u == null) continue;
-        final role = _deriveRole(
-          u['is_superuser'] as bool? ?? false,
-          u['is_seller'] as bool? ?? false,
-        );
-        final p = ChatParticipantModel(
-          id: u['id'] as String,
-          firstName: u['first_name'] as String? ?? '',
-          lastName: u['last_name'] as String? ?? '',
-          email: u['email'] as String? ?? '',
-          role: role,
-        );
-        participantsByChat.putIfAbsent(chatId, () => []).add(p);
-      }
-
-      // Last message per chat (msgRows already ordered newest-first)
-      final lastMsgByChat = <String, ChatMessageModel>{};
-      for (final row in msgRows as List) {
-        final chatId = row['chat_id'] as String;
-        if (!lastMsgByChat.containsKey(chatId)) {
-          lastMsgByChat[chatId] = ChatMessageModel(
-            id: row['id'] as String,
-            roomId: chatId,
-            senderId: row['sender_id'] as String,
-            content: row['content'] as String? ?? '',
-            isRead: row['read'] as bool? ?? false,
-            createdAt: row['created_at'] as String? ?? '',
-          );
-        }
-      }
-
-      // Unread count per chat
-      final unreadByChat = <String, int>{};
-      for (final row in unreadRows as List) {
-        final chatId = row['chat_id'] as String;
-        unreadByChat[chatId] = (unreadByChat[chatId] ?? 0) + 1;
-      }
-
-      return (roomRows as List).map((r) {
-        final chatId = r['id'] as String;
-        final lastMsg = lastMsgByChat[chatId];
-        return ChatRoomModel(
-          id: chatId,
-          participants: participantsByChat[chatId] ?? [],
-          updatedAt: r['updated_at'] as String? ?? r['created_at'] as String? ?? '',
-          unreadCount: unreadByChat[chatId] ?? 0,
-          messages: lastMsg != null ? [lastMsg] : [],
-        );
-      }).toList();
-    } catch (e) {
-      if (e is AppException) rethrow;
-      throw ServerException('Failed to load conversations: ${e.toString()}');
+      final res = await _dio.get<List<dynamic>>('/api/v1/chat/rooms');
+      final rows = res.data ?? [];
+      return rows
+          .map((r) => ChatRoomModel.fromJson(r as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw ServerException(
+        e.response?.data?['error']?.toString() ?? 'Failed to load conversations',
+        statusCode: e.response?.statusCode,
+      );
     }
   }
 
   Future<ChatRoomModel> getOrCreateRoom(String participantId) async {
-    final myId = _myId;
-    if (myId == null) throw const ServerException('Not authenticated');
-
     try {
-      // Find existing shared room
-      final myChats = await _client
-          .from('core_chat_members')
-          .select('chat_id')
-          .eq('user_id', myId);
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/api/v1/chat/rooms',
+        data: {'participantId': participantId},
+      );
+      return ChatRoomModel.fromJson(res.data ?? {});
+    } on DioException catch (e) {
+      throw ServerException(
+        e.response?.data?['error']?.toString() ?? 'Failed to open chat',
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
 
-      final myChatIds =
-          (myChats as List).map((r) => r['chat_id'] as String).toList();
+  /// Opens (or reuses) a buyer<->vendor chat tagged to a specific product, so
+  /// the server-side AI first-responder can answer with that product's live
+  /// price/stock instead of generic support copy.
+  Future<ChatRoomModel> getOrCreateVendorRoom(
+    String vendorId,
+    String productId,
+  ) async {
+    try {
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/api/v1/chat/rooms',
+        data: {'participantId': vendorId, 'productId': productId},
+      );
+      return ChatRoomModel.fromJson(res.data ?? {});
+    } on DioException catch (e) {
+      throw ServerException(
+        e.response?.data?['error']?.toString() ?? 'Failed to start chat with seller',
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
 
-      if (myChatIds.isNotEmpty) {
-        final shared = await _client
-            .from('core_chat_members')
-            .select('chat_id')
-            .eq('user_id', participantId)
-            .inFilter('chat_id', myChatIds)
-            .limit(1);
-
-        if ((shared as List).isNotEmpty) {
-          final chatId = shared.first['chat_id'] as String;
-          final rooms = await _buildRoomsForIds([chatId]);
-          if (rooms.isNotEmpty) return rooms.first;
-        }
-      }
-
-      // Create new room
-      final newRoom = await _client
-          .from('core_chat')
-          .insert({'is_fake': false})
-          .select('id, created_at, updated_at')
-          .single();
-
-      final chatId = newRoom['id'] as String;
-
-      await _client.from('core_chat_members').insert([
-        {'chat_id': chatId, 'user_id': myId},
-        {'chat_id': chatId, 'user_id': participantId},
-      ]);
-
-      final rooms = await _buildRoomsForIds([chatId]);
-      return rooms.isNotEmpty
-          ? rooms.first
-          : ChatRoomModel(
-              id: chatId,
-              participants: [],
-              updatedAt: newRoom['updated_at'] as String? ?? '',
-            );
-    } catch (e) {
-      if (e is AppException) rethrow;
-      throw ServerException('Failed to open chat: ${e.toString()}');
+  /// Opens (or reuses) a support chat with an available admin.
+  Future<ChatRoomModel> getSupportRoom() async {
+    try {
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/api/v1/chat/support-room',
+      );
+      return ChatRoomModel.fromJson(res.data ?? {});
+    } on DioException catch (e) {
+      throw ServerException(
+        e.response?.data?['error']?.toString() ?? 'Failed to open support chat',
+        statusCode: e.response?.statusCode,
+      );
     }
   }
 
@@ -186,82 +90,53 @@ class ChatDatasource {
     int limit = 50,
   }) async {
     try {
-      final query = _client
-          .from('core_sellermessage')
-          .select('id, chat_id, sender_id, content, read, created_at')
-          .eq('chat_id', roomId)
-          .order('created_at', ascending: false)
-          .limit(limit);
-
-      final rows = await query;
-      final messages = (rows as List)
-          .map((r) => supabaseRowToMessage(r as Map<String, dynamic>))
+      final res = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/chat/rooms/$roomId/messages',
+        queryParameters: {
+          if (before != null) 'before': before,
+          'limit': limit,
+        },
+      );
+      final data = (res.data?['data'] as List<dynamic>?) ?? [];
+      return data
+          .map((r) => ChatMessageModel.fromJson(r as Map<String, dynamic>).toEntity())
           .toList();
-      return messages.reversed.toList();
-    } catch (e) {
-      if (e is AppException) rethrow;
-      throw ServerException(e.toString());
+    } on DioException catch (e) {
+      throw ServerException(
+        e.response?.data?['error']?.toString() ?? 'Failed to load messages',
+        statusCode: e.response?.statusCode,
+      );
     }
   }
 
   Future<ChatMessage> sendMessage(String roomId, String content) async {
-    final myId = _myId;
-    if (myId == null) throw const ServerException('Not authenticated');
-
     try {
-      // Find the other participant to set reciever_id
-      final others = await _client
-          .from('core_chat_members')
-          .select('user_id')
-          .eq('chat_id', roomId)
-          .neq('user_id', myId)
-          .limit(1);
-
-      final receiverId = (others as List).isNotEmpty
-          ? others.first['user_id'] as String
-          : myId;
-
-      final inserted = await _client
-          .from('core_sellermessage')
-          .insert({
-            'chat_id': roomId,
-            'sender_id': myId,
-            'reciever_id': receiverId,
-            'content': content,
-            'read': false,
-          })
-          .select('id, chat_id, sender_id, content, read, created_at')
-          .single();
-
-      // Bump room updated_at
-      await _client
-          .from('core_chat')
-          .update({'updated_at': DateTime.now().toIso8601String()})
-          .eq('id', roomId);
-
-      return supabaseRowToMessage(inserted);
-    } catch (e) {
-      if (e is AppException) rethrow;
-      throw ServerException('Failed to send message: ${e.toString()}');
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/api/v1/chat/rooms/$roomId/messages',
+        data: {'content': content},
+      );
+      return ChatMessageModel.fromJson(res.data ?? {}).toEntity();
+    } on DioException catch (e) {
+      throw ServerException(
+        e.response?.data?['error']?.toString() ?? 'Failed to send message',
+        statusCode: e.response?.statusCode,
+      );
     }
   }
 
   Future<void> markAsRead(String roomId) async {
-    final myId = _myId;
-    if (myId == null) return;
     try {
-      await _client
-          .from('core_sellermessage')
-          .update({'read': true})
-          .eq('chat_id', roomId)
-          .eq('reciever_id', myId)
-          .eq('read', false);
-    } catch (_) {
-      // Non-critical
+      await _dio.post<void>('/api/v1/chat/rooms/$roomId/read');
+    } on DioException {
+      // Non-critical — matches the previous direct-Supabase behavior of
+      // silently ignoring read-receipt failures.
     }
   }
 
   // ─── Realtime ────────────────────────────────────────────────────────────────
+  // Unchanged: writes go through the API above, but realtime delivery stays on
+  // direct Supabase postgres_changes — this is exactly what the web client
+  // does too (write via API, subscribe to Postgres changes for live updates).
 
   RealtimeChannel subscribeToMessages(
     String roomId,
@@ -290,78 +165,8 @@ class ChatDatasource {
   Future<void> unsubscribe(RealtimeChannel channel) async {
     await _client.removeChannel(channel);
   }
-
-  // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-  String _deriveRole(bool isSuperuser, bool isSeller) {
-    if (isSuperuser) return 'ADMIN';
-    if (isSeller) return 'VENDOR';
-    return 'CUSTOMER';
-  }
-
-  Future<List<ChatRoomModel>> _buildRoomsForIds(List<String> chatIds) async {
-    if (chatIds.isEmpty) return [];
-    final myId = _myId;
-
-    final roomRows = await _client
-        .from('core_chat')
-        .select('id, created_at, updated_at')
-        .inFilter('id', chatIds);
-
-    final participantRows = await _client
-        .from('core_chat_members')
-        .select(
-            'chat_id, user:core_user!user_id(id, first_name, last_name, email, is_superuser, is_seller)',)
-        .inFilter('chat_id', chatIds);
-
-    final participantsByChat = <String, List<ChatParticipantModel>>{};
-    for (final row in participantRows as List) {
-      final chatId = row['chat_id'] as String;
-      final u = row['user'] as Map<String, dynamic>?;
-      if (u == null) continue;
-      final role = _deriveRole(
-        u['is_superuser'] as bool? ?? false,
-        u['is_seller'] as bool? ?? false,
-      );
-      participantsByChat.putIfAbsent(chatId, () => []).add(
-            ChatParticipantModel(
-              id: u['id'] as String,
-              firstName: u['first_name'] as String? ?? '',
-              lastName: u['last_name'] as String? ?? '',
-              email: u['email'] as String? ?? '',
-              role: role,
-            ),
-          );
-    }
-
-    final List<dynamic> unreadRows = myId != null
-        ? await _client
-            .from('core_sellermessage')
-            .select('chat_id')
-            .eq('reciever_id', myId)
-            .eq('read', false)
-            .inFilter('chat_id', chatIds)
-        : <dynamic>[];
-
-    final unreadByChat = <String, int>{};
-    for (final row in unreadRows) {
-      final chatId = row['chat_id'] as String;
-      unreadByChat[chatId] = (unreadByChat[chatId] ?? 0) + 1;
-    }
-
-    return (roomRows as List).map((r) {
-      final chatId = r['id'] as String;
-      return ChatRoomModel(
-        id: chatId,
-        participants: participantsByChat[chatId] ?? [],
-        updatedAt: r['updated_at'] as String? ??
-            r['created_at'] as String? ?? '',
-        unreadCount: unreadByChat[chatId] ?? 0,
-      );
-    }).toList();
-  }
 }
 
 final chatDatasourceProvider = Provider<ChatDatasource>((ref) {
-  return ChatDatasource(ref.watch(supabaseClientProvider));
+  return ChatDatasource(ref.watch(dioProvider), ref.watch(supabaseClientProvider));
 });
