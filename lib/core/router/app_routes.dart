@@ -13,6 +13,7 @@ abstract final class AppRoutes {
   static const wallet = '/wallet';
   static const profile = '/profile';
   static const profileEdit = '/profile/edit';
+  static const deleteAccount = '/profile/delete-account';
 
   // Nested under /products
   static const productDetail = ':productId';

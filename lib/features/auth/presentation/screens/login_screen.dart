@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../../../core/extensions/async_value_extensions.dart';
 import '../../../../core/router/app_routes.dart';
@@ -24,6 +25,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _isGoogleLoading = false;
+  bool _isAppleLoading = false;
 
   @override
   void dispose() {
@@ -50,6 +52,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _signInWithApple() async {
+    final authState = ref.read(authNotifierProvider);
+    if (authState.isLoading || _isAppleLoading) return;
+    setState(() => _isAppleLoading = true);
+    try {
+      await ref.read(authNotifierProvider.notifier).signInWithApple();
+    } finally {
+      if (mounted) setState(() => _isAppleLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
@@ -71,7 +84,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           );
       }
       next.whenData((user) {
-        if (user != null) context.go(AppRoutes.home);
+        if (user == null) return;
+        final redirectTo = GoRouterState.of(context).uri.queryParameters['redirect'];
+        context.go((redirectTo != null && redirectTo.isNotEmpty) ? redirectTo : AppRoutes.home);
       });
     });
 
@@ -231,6 +246,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ],
                         ),
                 ),
+
+                const SizedBox(height: AppDimensions.spacingMd),
+
+                // ─── Apple Sign-In ────────────────────────────────────────
+                // Uses Apple's official button widget (not a hand-rolled
+                // OutlinedButton like Google's) so it matches Apple's Human
+                // Interface Guidelines exactly — same height/width as the
+                // Google button above so neither is visually subordinate,
+                // per App Store Guideline 4.8.
+                _isAppleLoading
+                    ? Container(
+                        height: 48,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusMd),
+                          border: Border.all(color: colorScheme.outline),
+                        ),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                      )
+                    : SizedBox(
+                        height: 48,
+                        child: SignInWithAppleButton(
+                          onPressed: _signInWithApple,
+                          style: Theme.of(context).brightness == Brightness.dark
+                              ? SignInWithAppleButtonStyle.white
+                              : SignInWithAppleButtonStyle.black,
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusMd),
+                        ),
+                      ),
 
                 const SizedBox(height: AppDimensions.spacingMd),
 

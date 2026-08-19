@@ -24,6 +24,7 @@ import '../../features/orders/presentation/screens/orders_screen.dart';
 import '../../features/products/domain/entities/product.dart';
 import '../../features/products/presentation/screens/product_detail_screen.dart';
 import '../../features/products/presentation/screens/products_screen.dart';
+import '../../features/profile/presentation/screens/delete_account_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/vendor/data/models/subscription_checkout_result_model.dart';
@@ -129,6 +130,10 @@ final appRouterProvider = Provider<GoRouter>(
                 GoRoute(
                   path: 'edit',
                   builder: (_, __) => const EditProfileScreen(),
+                ),
+                GoRoute(
+                  path: 'delete-account',
+                  builder: (_, __) => const DeleteAccountScreen(),
                 ),
               ],
             ),

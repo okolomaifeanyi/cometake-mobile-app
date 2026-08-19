@@ -58,4 +58,10 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signInWithGoogle() => _datasource.signInWithGoogle();
+
+  @override
+  Future<void> signInWithApple() => _datasource.signInWithApple();
+
+  @override
+  Future<void> deleteAccount() => _datasource.deleteAccount();
 }

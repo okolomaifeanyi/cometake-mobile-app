@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/supabase/supabase_module.dart';
 import '../../../products/domain/entities/product.dart';
 import '../../data/datasources/wishlist_datasource.dart';
 
@@ -12,8 +13,11 @@ final wishlistIdsProvider =
 
 class WishlistIdsNotifier extends AsyncNotifier<List<String>> {
   @override
-  Future<List<String>> build() =>
-      ref.read(wishlistDatasourceProvider).getWishlistIds();
+  Future<List<String>> build() {
+    final client = ref.watch(supabaseClientProvider);
+    if (client.auth.currentUser == null) return Future.value(const []);
+    return ref.read(wishlistDatasourceProvider).getWishlistIds();
+  }
 
   Future<void> toggle(String productId) async {
     final previous = state.valueOrNull ?? [];

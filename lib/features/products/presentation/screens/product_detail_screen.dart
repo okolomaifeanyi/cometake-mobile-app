@@ -14,6 +14,8 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_error_widget.dart';
 import '../../../../shared/widgets/app_loading.dart';
+import '../../../../shared/widgets/auth_prompt_sheet.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../cart/presentation/providers/cart_provider.dart';
 import '../../../chat/presentation/providers/chat_provider.dart';
 import '../../../wishlist/presentation/providers/wishlist_provider.dart';
@@ -395,6 +397,13 @@ class _AddToCartBarState extends ConsumerState<_AddToCartBar> {
   bool _adding = false;
 
   Future<void> _addToCart() async {
+    if (!ref.read(isAuthenticatedProvider)) {
+      await showAuthPromptSheet(
+        context,
+        message: 'Sign in to add items to your cart.',
+      );
+      return;
+    }
     setState(() => _adding = true);
     await ref.read(cartNotifierProvider.notifier).addItem(widget.product.id);
     if (mounted) {
@@ -573,6 +582,13 @@ class _WishlistButton extends ConsumerWidget {
           size: 22,
         ),
         onPressed: () async {
+          if (!ref.read(isAuthenticatedProvider)) {
+            await showAuthPromptSheet(
+              context,
+              message: 'Sign in to save items to your wishlist.',
+            );
+            return;
+          }
           try {
             await ref.read(wishlistIdsProvider.notifier).toggle(productId);
           } catch (_) {

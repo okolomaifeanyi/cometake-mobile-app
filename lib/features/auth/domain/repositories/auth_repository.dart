@@ -14,4 +14,6 @@ abstract class AuthRepository {
   Future<void> verifyPhoneOtp({required String phone, required String token});
   Future<void> resetPassword({required String email});
   Future<void> signInWithGoogle();
+  Future<void> signInWithApple();
+  Future<void> deleteAccount();
 }

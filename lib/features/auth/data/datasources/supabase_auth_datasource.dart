@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/utils/nonce_generator.dart';
 import '../models/auth_user_model.dart';
 import 'auth_datasource.dart';
 
@@ -186,10 +188,12 @@ class SupabaseAuthDatasource implements AuthDatasource {
   Future<void> signInWithGoogle() async {
     try {
       // Step 1: native OS account picker — gets a Google ID token.
-      // serverClientId is the Web OAuth client ID (public value).
+      // serverClientId is the Web OAuth client ID (public value), paired
+      // with an Android OAuth client (package com.cometake.app + release
+      // SHA-1) registered in the same GCP project (cometake-1).
       final googleSignIn = GoogleSignIn(
         serverClientId:
-            '423246610057-tr07jd8g9j8betjec48g594ci304mj8q.apps.googleusercontent.com',
+            '1029125500608-qoo9l2gqal6phfgrl0mvu6atmknosq8v.apps.googleusercontent.com',
       );
       final account = await googleSignIn.signIn();
       if (account == null) return; // user cancelled
@@ -221,6 +225,74 @@ class SupabaseAuthDatasource implements AuthDatasource {
       rethrow;
     } catch (e) {
       throw AuthException('Google sign in failed: $e');
+    }
+  }
+
+  @override
+  Future<void> signInWithApple() async {
+    try {
+      final rawNonce = generateRawNonce();
+      final hashedNonce = sha256OfNonce(rawNonce);
+
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      );
+
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        throw const AuthException('Apple did not return an identity token.');
+      }
+
+      await _client.auth.signInWithIdToken(
+        provider: sb.OAuthProvider.apple,
+        idToken: idToken,
+        nonce: rawNonce,
+      );
+
+      // Apple only returns givenName/familyName on the FIRST authorization
+      // ever granted to this app — persist it now, since no later login
+      // will include it. buildAppleFirstLoginUpdate() returns null (and we
+      // skip the write) on every subsequent login.
+      final update = buildAppleFirstLoginUpdate(
+        givenName: credential.givenName,
+        familyName: credential.familyName,
+      );
+      if (update != null) {
+        final userId = _client.auth.currentUser?.id;
+        if (userId != null) {
+          await _client.from('core_user').update(update).eq('id', userId);
+        }
+      }
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) return; // user cancelled
+      throw AuthException('Apple sign in failed: ${e.message}');
+    } on sb.AuthException catch (e) {
+      throw AuthException(_friendlyAuthMessage(e.message));
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      throw AuthException('Apple sign in failed: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    try {
+      final response = await _client.functions.invoke('delete-account');
+      final data = response.data;
+      final isSuccess = response.status == 200 && (data is Map && data['success'] == true);
+      if (!isSuccess) {
+        final error = (data is Map) ? data['error'] as String? : null;
+        throw AuthException(error ?? 'Failed to delete account. Please try again.');
+      }
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      throw AuthException('Failed to delete account: $e');
     }
   }
 

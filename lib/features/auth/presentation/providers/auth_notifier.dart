@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'
 
 import '../../../../core/errors/error_handler.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/services/secure_storage_service.dart';
 import '../../../../core/supabase/supabase_module.dart';
 import '../../data/datasources/auth_datasource.dart';
 import '../../data/datasources/supabase_auth_datasource.dart';
@@ -143,6 +144,26 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
     } catch (e, st) {
       state = AsyncError(ErrorHandler.handle(e), st);
     }
+  }
+
+  Future<void> signInWithApple() async {
+    try {
+      await ref.read(authRepositoryProvider).signInWithApple();
+    } catch (e, st) {
+      state = AsyncError(ErrorHandler.handle(e), st);
+    }
+  }
+
+  // Deliberately does NOT catch errors the way signIn/signInWithGoogle do
+  // — the caller (DeleteAccountScreen) needs to distinguish "failed, stay
+  // on screen and show an error" from "succeeded, navigate away." Telling
+  // the user they're deleted when they aren't is exactly what the spec
+  // calls out as unacceptable.
+  Future<void> deleteAccount() async {
+    await ref.read(authRepositoryProvider).deleteAccount();
+    await ref.read(secureStorageServiceProvider).deleteAll();
+    await ref.read(authRepositoryProvider).signOut();
+    state = const AsyncData(null);
   }
 
   // ─── Profile bridge ─────────────────────────────────────────────────────────
