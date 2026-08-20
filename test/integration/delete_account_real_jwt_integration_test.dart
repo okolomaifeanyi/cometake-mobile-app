@@ -271,12 +271,25 @@ class _TestSupabase {
   }
 
   /// Permanently removes a test user's auth identity — cleanup only, never
-  /// exercised as part of the behavior under test.
+  /// exercised as part of the behavior under test. Deliberately does not
+  /// throw (this runs from `finally` blocks and must not mask the actual
+  /// test failure/result) — but a silent failure here means an orphaned
+  /// throwaway user sits in production, so it's surfaced loudly instead
+  /// of swallowed. A 404 is expected/fine (already deleted by the
+  /// function under test in the happy-path case).
   Future<void> adminDeleteUser(String userId) async {
-    await _dio.delete<dynamic>(
+    final res = await _dio.delete<dynamic>(
       '/auth/v1/admin/users/$userId',
       options: _authed(_serviceRoleKey, apikey: _serviceRoleKey),
     );
+    if (res.statusCode != 200 && res.statusCode != 404) {
+      // ignore: avoid_print
+      print(
+        'WARNING: cleanup failed to delete test user $userId '
+        '(${res.statusCode}): ${res.data} — remove it manually via the '
+        'Supabase dashboard.',
+      );
+    }
   }
 }
 
