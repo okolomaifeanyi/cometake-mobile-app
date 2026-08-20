@@ -71,4 +71,73 @@ void main() {
       expect(RouterGuard.redirect(AppRoutes.splash, isAuthenticated: true), AppRoutes.home);
     });
   });
+
+  group('RouterGuard.redirect — full route-surface coverage', () {
+    // Mirrors every GoRoute path registered in app_router.dart (with a
+    // realistic value substituted for path params, matching how
+    // state.matchedLocation looks at runtime — GoRouter resolves params
+    // before RouterGuard ever sees the location string). Kept as an
+    // explicit list — not derived from AppRoutes reflectively, since Dart
+    // has no reflection here — so that adding a new GoRoute without adding
+    // it to one of the two buckets below fails this test immediately,
+    // instead of silently inheriting RouterGuard's fail-closed default.
+    // Splash is public but not a "no redirect" case — it always forwards to
+    // home (see the dedicated splash group above) — so it's asserted
+    // separately below rather than folded into publicRoutes.
+    const publicRoutes = {
+      AppRoutes.login,
+      AppRoutes.register,
+      AppRoutes.otp,
+      AppRoutes.forgotPassword,
+      AppRoutes.home,
+      AppRoutes.products,
+      '/products/some-product-id',
+      AppRoutes.wishlist,
+    };
+
+    const gatedRoutes = {
+      AppRoutes.cart,
+      AppRoutes.wallet,
+      '/wallet/topup',
+      AppRoutes.profile,
+      '/profile/edit',
+      '/profile/delete-account',
+      AppRoutes.orders,
+      '/order/some-order-id',
+      '/checkout',
+      AppRoutes.vtu,
+      '/vtu/airtime',
+      AppRoutes.vtuHistory,
+      AppRoutes.chat,
+      '/chat/some-conversation-id',
+      AppRoutes.notifications,
+      AppRoutes.addresses,
+      AppRoutes.vendor,
+      '/vendor/add-product',
+      '/vendor/edit-product/some-product-id',
+      '/payment/some-payment-id',
+      AppRoutes.subscriptionPayment,
+    };
+
+    test('public and gated route sets do not overlap, and neither contains splash', () {
+      expect(publicRoutes.intersection(gatedRoutes), isEmpty);
+      expect(publicRoutes.contains(AppRoutes.splash), isFalse);
+      expect(gatedRoutes.contains(AppRoutes.splash), isFalse);
+    });
+
+    for (final route in publicRoutes) {
+      test('$route is reachable unauthenticated (declared public)', () {
+        expect(RouterGuard.redirect(route, isAuthenticated: false), isNull);
+      });
+    }
+
+    for (final route in gatedRoutes) {
+      test('$route redirects to login unauthenticated (declared gated)', () {
+        expect(
+          RouterGuard.redirect(route, isAuthenticated: false),
+          startsWith(AppRoutes.login),
+        );
+      });
+    }
+  });
 }
