@@ -57,32 +57,25 @@ class _TestSupabase {
         'Content-Type': 'application/json',
       });
 
-  /// Real signup over /auth/v1/signup — exactly what the app's
-  /// SupabaseAuthDatasource.signUp() triggers under the hood.
-  Future<String> signUp(String email, String password) async {
+  /// Creates a real auth.users row via the Supabase Auth admin API with
+  /// email_confirm: true set at creation — deliberately NOT
+  /// /auth/v1/signup (what SupabaseAuthDatasource.signUp() uses): the
+  /// public signup path sends a confirmation email, which depends on the
+  /// project's SMTP config/rate limit and has no test-harness equivalent
+  /// for "click the link." This is still a genuine Supabase Auth user
+  /// (not a synthetic row), just created through the admin path so the
+  /// test doesn't depend on mail delivery. The session/JWT obtained
+  /// afterward via signInGetAccessToken() is identical either way.
+  Future<String> adminCreateConfirmedUser(String email, String password) async {
     final res = await _dio.post<Map<String, dynamic>>(
-      '/auth/v1/signup',
-      data: {'email': email, 'password': password},
-      options: _authed(_anonKey),
-    );
-    if (res.statusCode != 200) {
-      throw StateError('signup failed (${res.statusCode}): ${res.data}');
-    }
-    return res.data!['id'] as String;
-  }
-
-  /// Admin-confirms the email so a real session/JWT can be obtained without
-  /// an inbox — the one step in this flow that has no client-side
-  /// equivalent (real users click the emailed link instead).
-  Future<void> adminConfirmEmail(String userId) async {
-    final res = await _dio.put<dynamic>(
-      '/auth/v1/admin/users/$userId',
-      data: {'email_confirm': true},
+      '/auth/v1/admin/users',
+      data: {'email': email, 'password': password, 'email_confirm': true},
       options: _authed(_serviceRoleKey, apikey: _serviceRoleKey),
     );
     if (res.statusCode != 200) {
-      throw StateError('admin confirm failed (${res.statusCode}): ${res.data}');
+      throw StateError('admin create user failed (${res.statusCode}): ${res.data}');
     }
+    return res.data!['id'] as String;
   }
 
   /// Real password sign-in over /auth/v1/token — mints the real JWT this
@@ -99,26 +92,46 @@ class _TestSupabase {
     return res.data!['access_token'] as String;
   }
 
-  /// Mirrors the exact upsert SupabaseAuthDatasource.signUp() performs,
-  /// using the user's OWN token so RLS is exercised the same way the real
-  /// app exercises it.
-  Future<void> upsertOwnCoreUserRow({
-    required String userToken,
+  /// Seeds a core_user row for a throwaway test user (test fixture setup,
+  /// not the behavior under test — see the comment on the service-role
+  /// call below for why this doesn't go through the user's own RLS path).
+  Future<void> seedCoreUserRow({
     required String id,
     required String email,
+    required String phone,
     required String firstName,
   }) async {
+    // Via service role, not userToken/RLS: an admin-created user has no
+    // pre-existing core_user row for a real signup's trigger to have
+    // populated (confirmed empirically — a minimal 7-field upsert 400s on
+    // NOT NULL "password" with no row to merge into), so this is a fresh
+    // INSERT and needs every NOT NULL column with no DB-level default,
+    // matching the column list web/supabase/tests/delete_user_account_test.sql
+    // already established as correct.
     final res = await _dio.post<dynamic>(
       '/rest/v1/core_user',
       data: {
         'id': id,
         'email': email,
+        'phone': phone,
+        'password': '!integration-test',
         'first_name': firstName,
         'last_name': 'Tester',
-        'verified_email': false,
         'is_active': true,
+        'is_superuser': false,
+        'is_staff': false,
+        'is_seller': false,
+        'is_fake': false,
+        'verified_email': false,
+        'verified_phone': false,
+        'has_2fa': false,
+        'id_is_verified': false,
+        'completed': true,
+        'updated_store': false,
+        'kyc_status': 'not_set',
+        'date_joined': DateTime.now().toUtc().toIso8601String(),
       },
-      options: _authed(userToken)
+      options: _authed(_serviceRoleKey, apikey: _serviceRoleKey)
         ..headers!['Prefer'] = 'resolution=merge-duplicates',
     );
     if (res.statusCode! >= 300) {
@@ -278,14 +291,19 @@ void main() {
       createRealUser() async {
     userCounter++;
     final email = 'cometake.itest.$stamp.$userCounter@example.com';
+    // core_user.phone has a real unique constraint — a shared hardcoded
+    // value 409s the moment a test creates two users (confirmed
+    // empirically). Derive a unique-per-call Nigerian-shaped number.
+    final phoneSuffix =
+        ((stamp + userCounter) % 1000000000).toString().padLeft(9, '0');
+    final phone = '+2347$phoneSuffix';
     const password = 'IntegrationTest123!';
-    final id = await api.signUp(email, password);
-    await api.adminConfirmEmail(id);
+    final id = await api.adminCreateConfirmedUser(email, password);
     final token = await api.signInGetAccessToken(email, password);
-    await api.upsertOwnCoreUserRow(
-      userToken: token,
+    await api.seedCoreUserRow(
       id: id,
       email: email,
+      phone: phone,
       firstName: 'Integration',
     );
     return (id: id, email: email, password: password, token: token);
@@ -345,7 +363,7 @@ void main() {
             reason: 'auth.users row must be hard-deleted — sign-in with the '
                 'old credentials should no longer succeed');
 
-        final newId = await api.signUp(user.email, user.password);
+        final newId = await api.adminCreateConfirmedUser(user.email, user.password);
         expect(newId, isNot(user.id),
             reason: 'signing up again with the same email after deletion must '
                 'create a fresh identity, not resurrect the deleted one');
@@ -368,9 +386,18 @@ void main() {
     'rejects a malformed/garbage bearer token — fails closed, no fallback '
     'to a privileged path',
     () async {
-      final res = await api.callDeleteAccount('not.a.real.jwt.at.all');
+      // Confirmed empirically: Supabase's Edge Functions gateway validates
+      // JWT signatures itself (verify_jwt) before the function ever runs —
+      // a garbage token, JWT-shaped or not, is rejected at the platform
+      // layer with its own body shape (not this function's `{error: 'Not
+      // authenticated'}`, which only fires for a cryptographically valid
+      // JWT that getUser() still can't resolve). That's actually a
+      // stronger guarantee than the function's own check: a malformed
+      // token never reaches application code at all. This test asserts
+      // the externally-observable contract — fails closed with 401 no
+      // matter which layer catches it — not which layer catches it.
+      final res = await api.callDeleteAccount('not-a-real-jwt-at-all');
       expect(res.statusCode, 401);
-      expect(res.data['error'], 'Not authenticated');
     },
     skip: _hasCredentials ? false : _skipReason,
   );
